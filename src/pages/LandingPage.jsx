@@ -274,7 +274,7 @@ function Hero({ onOpenLogin }) {
     <section className="lp-hero">
       <div className="lp-hero-inner">
         <div className="lp-hero-content">
-          <h1 className="lp-hero-title">Bridge Edukesyong</h1>
+          <h1 className="lp-hero-title">Bridge Education</h1>
           <p className="lp-hero-sub">
             English learning program, experienced tutors, and a flexible schedule tailored to your needs.
           </p>
