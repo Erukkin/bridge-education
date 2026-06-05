@@ -1304,6 +1304,8 @@ label {
 
   .topbar-logo-title {
     font-size: 16px;
+    width: 100%;
+    text-align: center;
   }
 
   .search-wrap {
@@ -1317,7 +1319,7 @@ label {
     flex-wrap: wrap;
     gap: 6px;
     width: 100%;
-    justify-content: flex-end;
+    justify-content: center;
   }
 
   .topbar-count {
