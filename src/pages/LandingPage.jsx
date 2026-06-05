@@ -433,8 +433,8 @@ function Footer() {
         <div className="lp-footer-links">
           <h4>Kontak</h4>
           <a href="#">📞 0812-3456-7890</a>
-          <a href="#">✉️ hello@bridgeedu.id</a>
-          <a href="#">📍 Jakarta, Indonesia</a>
+          <a href="#">✉️ bridge@bridge.id</a>
+          <a href="#">📍 Manado, Indonesia</a>
           <a href="#">💬 Live Chat</a>
         </div>
       </div>
