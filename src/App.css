@@ -1059,14 +1059,6 @@ label {
   border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
-.lp-footer-desc {
-  color: #8FA3BF;
-  font-size: 14px;
-  line-height: 1.7;
-  margin-bottom: 20px;
-  max-width: 280px;
-}
-
 .lp-socials {
   display: flex;
   gap: 10px;

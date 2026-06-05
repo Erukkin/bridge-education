@@ -410,9 +410,6 @@ function Footer() {
             <span className="lp-logo-icon">🎓</span>
             <span className="lp-logo-text" style={{ color: 'white' }}>Bridge Education</span>
           </div>
-          <p className="lp-footer-desc">
-            Membangun generasi berprestasi melalui pendidikan berkualitas dan terjangkau.
-          </p>
           <div className="lp-socials">
             <a href="#" className="lp-social-btn">📘 Facebook</a>
             <a href="#" className="lp-social-btn">📸 Instagram</a>
