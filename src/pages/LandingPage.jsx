@@ -417,13 +417,6 @@ function Footer() {
           </div>
         </div>
         <div className="lp-footer-links">
-          <h4>Program</h4>
-          <a href="#">Beginner Course</a>
-          <a href="#">Intermediate Course</a>
-          <a href="#">Advanced Course</a>
-          <a href="#">IELTS Preparation</a>
-        </div>
-        <div className="lp-footer-links">
           <h4>Perusahaan</h4>
           <a href="#">Tentang Kami</a>
           <a href="#">Karir</a>
