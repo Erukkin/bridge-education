@@ -1,4 +1,5 @@
 const BASE_URL = 'https://bridge-education-production.up.railway.app/api'
+const AUTH_URL = 'https://bridge-education-production.up.railway.app/auth'
 
 // ── STUDENTS ──────────────────────────────────────────
 
@@ -58,4 +59,65 @@ export async function updateClass(name, kelas) {
 export async function deleteClass(name) {
   const encodedName = encodeURIComponent(name)
   await fetch(`${BASE_URL}/classes/${encodedName}`, { method: 'DELETE' })
+}
+
+// ── AUTH ──────────────────────────────────────────────
+
+export async function login(username, password) {
+  const res = await fetch(`${AUTH_URL}/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password })
+  })
+  if (!res.ok) throw new Error('Invalid username or password')
+  return res.json()
+}
+
+export async function registerAdmin(username, password) {
+  const res = await fetch(`${AUTH_URL}/register-admin`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password, role: 'admin' })
+  })
+  if (!res.ok) {
+    const err = await res.json()
+    throw new Error(err.detail)
+  }
+  return res.json()
+}
+
+export async function createStudentUser(studentId) {
+  const res = await fetch(`${AUTH_URL}/create-student-user?student_id=${studentId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' }
+  })
+  return res.json()
+}
+
+export async function getStudentUser(studentId) {
+  const res = await fetch(`${AUTH_URL}/student-user/${studentId}`)
+  if (!res.ok) return null
+  return res.json()
+}
+
+export async function changePassword(userId, oldPassword, newPassword) {
+  const res = await fetch(`${AUTH_URL}/change-password?user_id=${userId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ old_password: oldPassword, new_password: newPassword })
+  })
+  if (!res.ok) {
+    const err = await res.json()
+    throw new Error(err.detail)
+  }
+  return res.json()
+}
+
+export async function getAdmins() {
+  const res = await fetch(`${AUTH_URL}/admins`)
+  return res.json()
+}
+
+export async function deleteUser(userId) {
+  await fetch(`${AUTH_URL}/users/${userId}`, { method: 'DELETE' })
 }

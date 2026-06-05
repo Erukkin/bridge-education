@@ -31,3 +31,34 @@ class ClassBase(BaseModel):
 class ClassResponse(ClassBase):
     class Config:
         from_attributes = True
+
+# ── AUTH ──────────────────────────────────────────────
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+class TokenResponse(BaseModel):
+    access_token: str
+    role: str
+    student_id: Optional[str] = None
+
+class UserCreate(BaseModel):
+    username: str
+    password: str
+    role: str
+    student_id: Optional[str] = None
+
+class UserResponse(BaseModel):
+    id: str
+    username: str
+    role: str
+    student_id: Optional[str] = None
+    plain_password: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class ChangePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str

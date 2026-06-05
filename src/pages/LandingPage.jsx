@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { login } from '../api'
 import '../App.css'
 
 // ── DATA ──────────────────────────────────────────────
@@ -121,20 +122,23 @@ function LoginModal({ onClose, onLogin }) {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  function handleLogin() {
+  async function handleLogin() {
     if (!username || !password) {
       setError('Please fill in all fields.')
       return
     }
     setLoading(true)
-    setTimeout(() => {
-      if (username === 'admin' && password === 'admin123') {
-        onLogin()
-      } else {
-        setError('Invalid username or password.')
-        setLoading(false)
-      }
-    }, 600)
+    try {
+      const data = await login(username, password)
+      onLogin({
+        role: data.role,
+        access_token: data.access_token,
+        student_id: data.student_id
+      })
+    } catch (err) {
+      setError(err.message)
+      setLoading(false)
+    }
   }
 
   return (
@@ -156,7 +160,6 @@ function LoginModal({ onClose, onLogin }) {
         overflow: 'hidden',
         animation: 'modalIn 0.25s ease'
       }}>
-        {/* Header */}
         <div style={{
           background: 'linear-gradient(135deg, #0B1E3E, #1A4A8A)',
           padding: '28px 28px 24px',
@@ -169,15 +172,24 @@ function LoginModal({ onClose, onLogin }) {
             borderRadius: '50%', cursor: 'pointer', fontSize: '16px',
             display: 'flex', alignItems: 'center', justifyContent: 'center'
           }}>✕</button>
+          <div style={{
+            width: '48px', height: '48px',
+            background: 'linear-gradient(135deg, #4A90D9, #5BA3F5)',
+            borderRadius: '14px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '22px', marginBottom: '14px'
+          }}>🎓</div>
           <h2 style={{
             fontFamily: 'Sora, sans-serif', fontWeight: 800,
             fontSize: '20px', color: 'white', marginBottom: '4px'
           }}>
             Welcome back
           </h2>
+          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>
+            Sign in to Bridge Education
+          </p>
         </div>
 
-        {/* Body */}
         <div style={{ padding: '28px' }}>
           <label>Username</label>
           <input
@@ -238,13 +250,6 @@ function LoginModal({ onClose, onLogin }) {
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
-
-          <p style={{
-            textAlign: 'center', marginTop: '16px',
-            color: '#8FA3BF', fontSize: '12px'
-          }}>
-            Demo: <b style={{ color: '#4A5568' }}>admin</b> / <b style={{ color: '#4A5568' }}>admin123</b>
-          </p>
         </div>
       </div>
     </div>
