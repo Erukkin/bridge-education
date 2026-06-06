@@ -785,7 +785,7 @@ export default function Dashboard({ onLogout }) {
     <div style={{ minHeight: '100vh', width: '100%', background: 'var(--navy)', fontFamily: 'DM Sans' }}>
 
       <div className="topbar">
-        <p className="topbar-logo-title">Bridge Education</p>
+        <p className="topbar-logo-title">Dashboard</p>
 
         {viewMode === 'students' && (
           <div className={`search-wrap ${searchFocused ? 'search-focused' : ''}`}>
