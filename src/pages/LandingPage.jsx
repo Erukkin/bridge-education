@@ -459,7 +459,7 @@ export default function LandingPage({ onLogin }) {
       {showLogin && (
         <LoginModal
           onClose={() => setShowLogin(false)}
-          onLogin={() => { setShowLogin(false); onLogin() }}
+          onLogin={(userData) => { setShowLogin(false); onLogin(userData) }}
         />
       )}
     </div>
