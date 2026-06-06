@@ -121,3 +121,16 @@ export async function getAdmins() {
 export async function deleteUser(userId) {
   await fetch(`${AUTH_URL}/users/${userId}`, { method: 'DELETE' })
 }
+
+export async function changeAdminPassword(userId, oldPassword, newPassword) {
+  const res = await fetch(`${AUTH_URL}/change-admin-password?user_id=${userId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ old_password: oldPassword, new_password: newPassword })
+  })
+  if (!res.ok) {
+    const err = await res.json()
+    throw new Error(err.detail)
+  }
+  return res.json()
+}

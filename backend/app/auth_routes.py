@@ -121,3 +121,25 @@ def delete_user(user_id: str, db: Session = Depends(get_db)):
     db.delete(user)
     db.commit()
     return {"message": "User deleted"}
+
+@router.post("/reset-student-password/{student_id}")
+def reset_student_password(student_id: str, new_password: str, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.student_id == student_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.hashed_password = hash_password(new_password)
+    user.plain_password = new_password
+    db.commit()
+    return {"message": "Password reset successfully"}
+
+@router.post("/change-admin-password")
+def change_admin_password(user_id: str, request: schemas.ChangePasswordRequest, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if not verify_password(request.old_password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Old password is incorrect")
+    user.hashed_password = hash_password(request.new_password)
+    user.plain_password = request.new_password
+    db.commit()
+    return {"message": "Password changed successfully"}
