@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react'
 import '../App.css'
 import {
   getStudents, createStudent, updateStudent, deleteStudent,
-  getClasses, createClass, updateClass, deleteClass
+  getClasses, createClass, updateClass, deleteClass,
+  createStudentUser, getStudentUser, getAdmins,
+  registerAdmin, deleteUser
 } from '../api'
 
 // ── CONSTANTS ──────────────────────────────────────────
@@ -97,6 +99,168 @@ function getOrCreateClass(classes, program, classType, ageGroup, mode) {
   return { isNew: true, classId: `${prefix} #${suffix}` }
 }
 
+// ── ADMIN MODAL ────────────────────────────────────────
+function AdminModal({ onClose }) {
+  const [admins, setAdmins] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [username, setUsername] = useState('')
+  const [regPassword, setRegPassword] = useState('')
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+  const [newAdminPassword, setNewAdminPassword] = useState('')
+
+  useEffect(() => { loadAdmins() }, [])
+
+  async function loadAdmins() {
+    setLoading(true)
+    const data = await getAdmins()
+    setAdmins(data)
+    setLoading(false)
+  }
+
+  async function handleAddAdmin() {
+    setError('')
+    setSuccess('')
+    if (!username) { setError('Please enter a username.'); return }
+    if (regPassword !== 'Bridge2026Digital') { setError('Invalid registration password.'); return }
+    try {
+      const result = await registerAdmin(username, regPassword)
+      setNewAdminPassword(result.plain_password)
+      setSuccess(`Admin "${username}" created!`)
+      setUsername('')
+      setRegPassword('')
+      loadAdmins()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  async function handleDeleteAdmin(id) {
+    const ok = window.confirm('Delete this admin account?')
+    if (!ok) return
+    await deleteUser(id)
+    loadAdmins()
+  }
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0,
+      background: 'rgba(5,15,35,0.75)',
+      backdropFilter: 'blur(4px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      zIndex: 1000, padding: '16px'
+    }}>
+      <div style={{
+        background: 'white', borderRadius: '16px',
+        width: '100%', maxWidth: '480px',
+        boxShadow: '0 24px 64px rgba(0,0,0,0.4)',
+        overflow: 'hidden', maxHeight: '90vh',
+        display: 'flex', flexDirection: 'column'
+      }}>
+        <div className="modal-header" style={{ flexShrink: 0 }}>
+          <div>
+            <p className="modal-header-label">Management</p>
+            <h2 className="modal-header-title">Admin Accounts</h2>
+          </div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+
+        <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
+          <div style={{ background: 'var(--off-white)', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
+            <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--blue)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>
+              Add New Admin
+            </p>
+            <label>Username</label>
+            <input value={username} onChange={e => setUsername(e.target.value)} placeholder="Enter admin username" />
+            <label>Registration Password</label>
+            <input type="password" value={regPassword} onChange={e => setRegPassword(e.target.value)} placeholder="Enter Bridge2026Digital" />
+
+            {error && (
+              <div style={{ background: 'rgba(229,62,62,0.08)', border: '1px solid rgba(229,62,62,0.25)', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', color: '#E53E3E', marginBottom: '12px' }}>
+                ⚠️ {error}
+              </div>
+            )}
+            {success && (
+              <div style={{ background: 'rgba(46,125,50,0.08)', border: '1px solid rgba(46,125,50,0.25)', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', color: '#2E7D32', marginBottom: '12px' }}>
+                ✅ {success}
+                {newAdminPassword && (
+                  <p style={{ marginTop: '6px', fontWeight: 700 }}>
+                    Password: <span style={{ background: '#f0f0f0', padding: '2px 8px', borderRadius: '4px', fontFamily: 'monospace' }}>{newAdminPassword}</span>
+                  </p>
+                )}
+              </div>
+            )}
+            <button className="btn-confirm" style={{ width: '100%' }} onClick={handleAddAdmin}>Add Admin</button>
+          </div>
+
+          <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--blue)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>
+            Current Admins ({admins.length})
+          </p>
+
+          {loading ? (
+            <p style={{ color: 'var(--gray)', fontSize: '13px' }}>Loading...</p>
+          ) : admins.length === 0 ? (
+            <p style={{ color: 'var(--gray)', fontSize: '13px' }}>No admins yet.</p>
+          ) : (
+            admins.map((admin, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', borderRadius: '10px', background: 'var(--off-white)', marginBottom: '8px' }}>
+                <div>
+                  <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--navy)' }}>{admin.username}</p>
+                  <p style={{ fontSize: '11px', color: 'var(--gray)' }}>Admin</p>
+                </div>
+                <button onClick={() => handleDeleteAdmin(admin.id)} style={{ background: 'rgba(229,62,62,0.1)', border: '1px solid rgba(229,62,62,0.2)', color: '#E53E3E', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}>
+                  Delete
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── STUDENT PASSWORD BADGE ─────────────────────────────
+function StudentPasswordBadge({ studentId }) {
+  const [userInfo, setUserInfo] = useState(null)
+  const [showPassword, setShowPassword] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [loaded, setLoaded] = useState(false)
+
+  async function loadUserInfo() {
+    if (loaded) { setShowPassword(!showPassword); return }
+    setLoading(true)
+    const data = await getStudentUser(studentId)
+    setUserInfo(data)
+    setLoaded(true)
+    setShowPassword(true)
+    setLoading(false)
+  }
+
+  return (
+    <div style={{ marginTop: '10px' }}>
+      <button onClick={loadUserInfo} style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.08)', color: 'var(--gray-light)', cursor: 'pointer', fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+        {loading ? '...' : showPassword ? '🙈 Hide Password' : '🔑 Show Login Info'}
+      </button>
+      {showPassword && userInfo && (
+        <div style={{ marginTop: '8px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '10px 12px' }}>
+          <p style={{ fontSize: '11px', color: 'var(--gray-light)', marginBottom: '4px' }}>
+            <span style={{ color: 'var(--accent-bright)' }}>Username:</span> {userInfo.username}
+          </p>
+          <p style={{ fontSize: '11px', color: 'var(--gray-light)' }}>
+            <span style={{ color: 'var(--accent-bright)' }}>Password:</span> {userInfo.plain_password}
+          </p>
+        </div>
+      )}
+      {showPassword && !userInfo && (
+        <div style={{ marginTop: '8px', background: 'rgba(229,62,62,0.1)', border: '1px solid rgba(229,62,62,0.2)', borderRadius: '8px', padding: '10px 12px', fontSize: '11px', color: '#FC8181' }}>
+          ⚠️ No login account yet
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── MODAL ──────────────────────────────────────────────
 function Modal({ onClose, onConfirm, editData, classes }) {
   const hasAgeGroup = (program) => program === 'GE'
@@ -111,7 +275,6 @@ function Modal({ onClose, onConfirm, editData, classes }) {
     ageGroup: editData?.age_group || '',
     mode: editData?.mode || '',
   })
-
   const [step, setStep] = useState(1)
 
   const stepTitles = {
@@ -143,20 +306,8 @@ function Modal({ onClose, onConfirm, editData, classes }) {
   const progressPct = ((step - 1) / (TOTAL_STEPS - 1)) * 100
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0,
-      background: 'rgba(5,15,35,0.75)',
-      backdropFilter: 'blur(4px)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      zIndex: 1000, padding: '16px', overflowY: 'auto'
-    }}>
-      <div style={{
-        background: 'var(--white)', borderRadius: '16px',
-        width: '100%', maxWidth: '480px',
-        boxShadow: '0 24px 64px rgba(0,0,0,0.4)',
-        overflow: 'hidden', margin: 'auto',
-        maxHeight: '90vh', display: 'flex', flexDirection: 'column'
-      }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(5,15,35,0.75)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px', overflowY: 'auto' }}>
+      <div style={{ background: 'var(--white)', borderRadius: '16px', width: '100%', maxWidth: '480px', boxShadow: '0 24px 64px rgba(0,0,0,0.4)', overflow: 'hidden', margin: 'auto', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
         <div className="modal-header" style={{ flexShrink: 0 }}>
           <div>
             <p className="modal-header-label">{editData ? 'Editing Record' : `Step ${step} of ${TOTAL_STEPS}`}</p>
@@ -170,7 +321,6 @@ function Modal({ onClose, onConfirm, editData, classes }) {
         </div>
 
         <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
-
           {step === 1 && (
             <div>
               <label>Full Name</label>
@@ -199,14 +349,7 @@ function Modal({ onClose, onConfirm, editData, classes }) {
               <p style={{ color: 'var(--gray)', fontSize: '13px', marginBottom: '16px' }}>Choose the English program that fits the student's goals</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {PROGRAMS.map(p => (
-                  <button key={p} onClick={() => handleProgramChange(p)} style={{
-                    padding: '14px 16px', borderRadius: '10px',
-                    border: `2px solid ${form.program === p ? 'var(--accent)' : 'var(--gray-light)'}`,
-                    background: form.program === p ? 'rgba(74,144,217,0.1)' : 'var(--off-white)',
-                    color: form.program === p ? 'var(--blue)' : 'var(--navy)',
-                    cursor: 'pointer', fontWeight: form.program === p ? 700 : 500,
-                    fontSize: '14px', textAlign: 'left', transition: 'all 0.15s', fontFamily: 'Sora, sans-serif'
-                  }}>
+                  <button key={p} onClick={() => handleProgramChange(p)} style={{ padding: '14px 16px', borderRadius: '10px', border: `2px solid ${form.program === p ? 'var(--accent)' : 'var(--gray-light)'}`, background: form.program === p ? 'rgba(74,144,217,0.1)' : 'var(--off-white)', color: form.program === p ? 'var(--blue)' : 'var(--navy)', cursor: 'pointer', fontWeight: form.program === p ? 700 : 500, fontSize: '14px', textAlign: 'left', transition: 'all 0.15s', fontFamily: 'Sora, sans-serif' }}>
                     {form.program === p ? '✓ ' : ''}{p} Programs
                   </button>
                 ))}
@@ -219,12 +362,7 @@ function Modal({ onClose, onConfirm, editData, classes }) {
               <p style={{ color: 'var(--gray)', fontSize: '13px', marginBottom: '16px' }}>Choose class type for {form.program} Programs</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 {(CLASS_TYPES_BY_PROGRAM[form.program] || []).map(c => (
-                  <button key={c.name} onClick={() => setForm({ ...form, classType: c.name })} style={{
-                    padding: '16px', borderRadius: '10px',
-                    border: `2px solid ${form.classType === c.name ? 'var(--accent)' : 'var(--gray-light)'}`,
-                    background: form.classType === c.name ? 'rgba(74,144,217,0.1)' : 'var(--off-white)',
-                    cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s',
-                  }}>
+                  <button key={c.name} onClick={() => setForm({ ...form, classType: c.name })} style={{ padding: '16px', borderRadius: '10px', border: `2px solid ${form.classType === c.name ? 'var(--accent)' : 'var(--gray-light)'}`, background: form.classType === c.name ? 'rgba(74,144,217,0.1)' : 'var(--off-white)', cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s' }}>
                     <p style={{ fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: '13px', color: form.classType === c.name ? 'var(--blue)' : 'var(--navy)', marginBottom: '4px' }}>
                       {form.classType === c.name ? '✓ ' : ''}{c.name}
                     </p>
@@ -243,16 +381,8 @@ function Modal({ onClose, onConfirm, editData, classes }) {
                   <label style={{ marginBottom: '8px', display: 'block' }}>Age Group</label>
                   <div style={{ display: 'flex', gap: '10px', marginBottom: '24px' }}>
                     {AGE_GROUPS.map(a => (
-                      <button key={a} onClick={() => setForm({ ...form, ageGroup: a })} style={{
-                        flex: 1, padding: '12px', borderRadius: '10px',
-                        border: `2px solid ${form.ageGroup === a ? 'var(--accent)' : 'var(--gray-light)'}`,
-                        background: form.ageGroup === a ? 'rgba(74,144,217,0.1)' : 'var(--off-white)',
-                        color: form.ageGroup === a ? 'var(--blue)' : 'var(--navy)',
-                        cursor: 'pointer', fontWeight: form.ageGroup === a ? 700 : 500,
-                        fontSize: '13px', fontFamily: 'Sora, sans-serif', transition: 'all 0.15s'
-                      }}>
-                        {form.ageGroup === a ? '✓ ' : ''}
-                        {a === 'Young' ? '🧒 Young' : a === 'Teens' ? '👦 Teens' : '👨 Adult'}
+                      <button key={a} onClick={() => setForm({ ...form, ageGroup: a })} style={{ flex: 1, padding: '12px', borderRadius: '10px', border: `2px solid ${form.ageGroup === a ? 'var(--accent)' : 'var(--gray-light)'}`, background: form.ageGroup === a ? 'rgba(74,144,217,0.1)' : 'var(--off-white)', color: form.ageGroup === a ? 'var(--blue)' : 'var(--navy)', cursor: 'pointer', fontWeight: form.ageGroup === a ? 700 : 500, fontSize: '13px', fontFamily: 'Sora, sans-serif', transition: 'all 0.15s' }}>
+                        {form.ageGroup === a ? '✓ ' : ''}{a === 'Young' ? '🧒 Young' : a === 'Teens' ? '👦 Teens' : '👨 Adult'}
                       </button>
                     ))}
                   </div>
@@ -261,14 +391,7 @@ function Modal({ onClose, onConfirm, editData, classes }) {
               <label style={{ marginBottom: '8px', display: 'block' }}>Class Mode</label>
               <div style={{ display: 'flex', gap: '10px' }}>
                 {MODES.map(m => (
-                  <button key={m} onClick={() => setForm({ ...form, mode: m })} style={{
-                    flex: 1, padding: '14px', borderRadius: '10px',
-                    border: `2px solid ${form.mode === m ? 'var(--accent)' : 'var(--gray-light)'}`,
-                    background: form.mode === m ? 'rgba(74,144,217,0.1)' : 'var(--off-white)',
-                    color: form.mode === m ? 'var(--blue)' : 'var(--navy)',
-                    cursor: 'pointer', fontWeight: form.mode === m ? 700 : 500,
-                    fontSize: '14px', fontFamily: 'Sora, sans-serif', transition: 'all 0.15s'
-                  }}>
+                  <button key={m} onClick={() => setForm({ ...form, mode: m })} style={{ flex: 1, padding: '14px', borderRadius: '10px', border: `2px solid ${form.mode === m ? 'var(--accent)' : 'var(--gray-light)'}`, background: form.mode === m ? 'rgba(74,144,217,0.1)' : 'var(--off-white)', color: form.mode === m ? 'var(--blue)' : 'var(--navy)', cursor: 'pointer', fontWeight: form.mode === m ? 700 : 500, fontSize: '14px', fontFamily: 'Sora, sans-serif', transition: 'all 0.15s' }}>
                     {form.mode === m ? '✓ ' : ''}{m === 'Offline' ? '🏫 Offline' : '💻 Online'}
                   </button>
                 ))}
@@ -302,12 +425,7 @@ function Modal({ onClose, onConfirm, editData, classes }) {
               {(() => {
                 const { classId, isNew } = getOrCreateClass(classes, form.program, form.classType, form.ageGroup, form.mode)
                 return (
-                  <div style={{
-                    background: isNew ? 'rgba(240,180,41,0.1)' : 'rgba(46,125,50,0.08)',
-                    border: `1px solid ${isNew ? 'rgba(240,180,41,0.3)' : 'rgba(46,125,50,0.2)'}`,
-                    borderRadius: '10px', padding: '12px 16px',
-                    display: 'flex', alignItems: 'center', gap: '10px'
-                  }}>
+                  <div style={{ background: isNew ? 'rgba(240,180,41,0.1)' : 'rgba(46,125,50,0.08)', border: `1px solid ${isNew ? 'rgba(240,180,41,0.3)' : 'rgba(46,125,50,0.2)'}`, borderRadius: '10px', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <span style={{ fontSize: '20px' }}>{isNew ? '🆕' : '✅'}</span>
                     <div>
                       <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--navy)', marginBottom: '2px' }}>{classId}</p>
@@ -385,6 +503,7 @@ function StudentCard({ murid, mode, onSelect }) {
           ⚠️ Class deleted — please edit to reassign
         </div>
       )}
+      <StudentPasswordBadge studentId={murid.id} />
     </div>
   )
 }
@@ -472,11 +591,11 @@ export default function Dashboard({ onLogout }) {
   const [actionMode, setActionMode] = useState(null)
   const [selectedId, setSelectedId] = useState(null)
   const [showModal, setShowModal] = useState(false)
+  const [showAdminModal, setShowAdminModal] = useState(false)
   const [search, setSearch] = useState('')
   const [searchBy, setSearchBy] = useState('name')
   const [searchFocused, setSearchFocused] = useState(false)
 
-  // Load data dari API
   useEffect(() => {
     async function loadData() {
       setLoading(true)
@@ -508,7 +627,6 @@ export default function Dashboard({ onLogout }) {
         const ok = window.confirm(`Delete ${item.nama_lengkap}? This action cannot be undone.`)
         if (!ok) return
         await deleteStudent(item.id)
-        // Update class — hapus student dari student_ids
         const kelas = classes.find(c => c.name === item.class_id)
         if (kelas) {
           const updatedIds = kelas.student_ids.filter(id => id !== item.id)
@@ -536,7 +654,6 @@ export default function Dashboard({ onLogout }) {
         )
         if (!ok) return
         await deleteClass(item.name)
-        // Update affected students jadi Unassigned
         if (affectedCount > 0) {
           await Promise.all(
             item.student_ids.map(sid => {
@@ -570,7 +687,6 @@ export default function Dashboard({ onLogout }) {
       let updatedClasses = [...classes]
 
       if (configChanged || oldClassId === 'Unassigned') {
-        // Hapus dari kelas lama
         if (oldClassId !== 'Unassigned') {
           const oldKelas = updatedClasses.find(c => c.name === oldClassId)
           if (oldKelas) {
@@ -616,7 +732,6 @@ export default function Dashboard({ onLogout }) {
 
     } else {
       const { classId, isNew } = getOrCreateClass(classes, form.program, form.classType, form.ageGroup, form.mode)
-
       const newStudent = {
         id: studentId,
         nama_lengkap: form.namaLengkap,
@@ -647,6 +762,7 @@ export default function Dashboard({ onLogout }) {
 
       setStudents([...students, newStudent])
       setClasses(updatedClasses)
+      await createStudentUser(studentId)
     }
 
     setShowModal(false)
@@ -700,12 +816,7 @@ export default function Dashboard({ onLogout }) {
         <div className="topbar-actions">
           <div style={{ display: 'flex', background: 'rgba(255,255,255,0.08)', borderRadius: '8px', padding: '3px', gap: '2px' }}>
             {[{ key: 'students', label: '👤 Students' }, { key: 'classes', label: '📚 Classes' }].map(v => (
-              <button key={v.key} onClick={() => { setViewMode(v.key); setActionMode(null) }} style={{
-                padding: '6px 14px', borderRadius: '6px', border: 'none',
-                background: viewMode === v.key ? 'var(--accent)' : 'transparent',
-                color: viewMode === v.key ? 'white' : 'var(--gray-light)',
-                cursor: 'pointer', fontSize: '12px', fontWeight: 600, fontFamily: 'Sora', transition: 'all 0.2s'
-              }}>
+              <button key={v.key} onClick={() => { setViewMode(v.key); setActionMode(null) }} style={{ padding: '6px 14px', borderRadius: '6px', border: 'none', background: viewMode === v.key ? 'var(--accent)' : 'transparent', color: viewMode === v.key ? 'white' : 'var(--gray-light)', cursor: 'pointer', fontSize: '12px', fontWeight: 600, fontFamily: 'Sora', transition: 'all 0.2s' }}>
                 {v.label}
               </button>
             ))}
@@ -734,6 +845,10 @@ export default function Dashboard({ onLogout }) {
           <button className="btn-mode" onClick={() => { setActionMode(actionMode === 'delete' ? null : 'delete'); setSelectedId(null) }}
             style={{ border: `1.5px solid ${actionMode === 'delete' ? 'var(--danger)' : 'rgba(255,255,255,0.15)'}`, color: actionMode === 'delete' ? '#FC8181' : 'var(--gray-light)', background: actionMode === 'delete' ? 'rgba(229,62,62,0.15)' : 'transparent' }}>
             🗑️ Delete
+          </button>
+
+          <button onClick={() => setShowAdminModal(true)} style={{ padding: '8px 14px', borderRadius: '8px', border: '1.5px solid rgba(255,255,255,0.15)', background: 'transparent', color: 'var(--gray-light)', cursor: 'pointer', fontSize: '13px', fontFamily: 'Sora', fontWeight: 600 }}>
+            👥 Admins
           </button>
 
           <button onClick={onLogout} style={{ padding: '8px 14px', borderRadius: '8px', border: '1.5px solid rgba(255,255,255,0.15)', background: 'transparent', color: 'var(--gray-light)', cursor: 'pointer', fontSize: '13px', fontFamily: 'Sora', fontWeight: 600 }}>
@@ -798,6 +913,10 @@ export default function Dashboard({ onLogout }) {
           editData={editData}
           classes={classes}
         />
+      )}
+
+      {showAdminModal && (
+        <AdminModal onClose={() => setShowAdminModal(false)} />
       )}
     </div>
   )
