@@ -724,7 +724,7 @@ export default function Dashboard({ onLogout, user }) {
       }}>
         {/* Tingkat 1 — Logo + View Toggle + Search */}
         <div style={{ display: 'flex', alignItems: 'center', padding: '10px 24px', gap: '12px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-          <p className="topbar-logo-title" style={{ flexShrink: 0 }}>Bridge Education</p>
+          <p className="topbar-logo-title" style={{ flexShrink: 0 }}>Bridge Education Dashboard</p>
 
           {/* View toggle */}
           <div style={{ display: 'flex', background: 'rgba(255,255,255,0.08)', borderRadius: '8px', padding: '3px', gap: '2px', flexShrink: 0 }}>
