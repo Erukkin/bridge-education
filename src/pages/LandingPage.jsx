@@ -130,6 +130,7 @@ function LoginModal({ onClose, onLogin }) {
     setLoading(true)
     try {
       const data = await login(username, password)
+      console.log('login response:', data)
       onLogin({
         role: data.role,
         access_token: data.access_token,
