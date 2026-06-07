@@ -25,7 +25,8 @@ def login(request: schemas.LoginRequest, db: Session = Depends(get_db)):
     return {
         "access_token": token,
         "role": user.role,
-        "student_id": user.student_id
+        "student_id": user.student_id,
+        "user_id": user.id
     }
 
 # ── REGISTER ADMIN ─────────────────────────────────────
