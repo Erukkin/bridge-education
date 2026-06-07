@@ -42,6 +42,7 @@ class TokenResponse(BaseModel):
     access_token: str
     role: str
     student_id: Optional[str] = None
+    user_id: Optional[str] = None
 
 class UserCreate(BaseModel):
     username: str

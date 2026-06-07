@@ -133,7 +133,8 @@ function LoginModal({ onClose, onLogin }) {
       onLogin({
         role: data.role,
         access_token: data.access_token,
-        student_id: data.student_id
+        student_id: data.student_id,
+        id: data.user_id
       })
     } catch (err) {
       setError(err.message)
