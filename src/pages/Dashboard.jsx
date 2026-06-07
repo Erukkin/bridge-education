@@ -218,7 +218,7 @@ function AdminModal({ onClose }) {
           <div style={{ background: 'var(--off-white)', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
             <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--blue)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>Add New Admin</p>
             <label>Username</label>
-            <input value={username} onChange={e => setUsername(e.target.value)} placeholder="Enter admin username" />
+            <input value={username} onChange={e => setUsername(e.target.value)} placeholder="Enter Admin Username" />
             <label>Registration Password</label>
             <input type="password" value={regPassword} onChange={e => setRegPassword(e.target.value)} placeholder="Enter Registration Password" />
             {error && <div style={{ background: 'rgba(229,62,62,0.08)', border: '1px solid rgba(229,62,62,0.25)', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', color: '#E53E3E', marginBottom: '12px' }}>⚠️ {error}</div>}
