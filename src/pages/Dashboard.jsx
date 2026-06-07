@@ -220,7 +220,7 @@ function AdminModal({ onClose }) {
             <label>Username</label>
             <input value={username} onChange={e => setUsername(e.target.value)} placeholder="Enter admin username" />
             <label>Registration Password</label>
-            <input type="password" value={regPassword} onChange={e => setRegPassword(e.target.value)} placeholder="Enter Bridge2026Digital" />
+            <input type="password" value={regPassword} onChange={e => setRegPassword(e.target.value)} placeholder="Enter Registration Password" />
             {error && <div style={{ background: 'rgba(229,62,62,0.08)', border: '1px solid rgba(229,62,62,0.25)', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', color: '#E53E3E', marginBottom: '12px' }}>⚠️ {error}</div>}
             {success && (
               <div style={{ background: 'rgba(46,125,50,0.08)', border: '1px solid rgba(46,125,50,0.25)', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', color: '#2E7D32', marginBottom: '12px' }}>
