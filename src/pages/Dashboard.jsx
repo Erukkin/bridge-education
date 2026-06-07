@@ -270,7 +270,7 @@ function StudentPasswordBadge({ studentId }) {
   return (
     <div style={{ marginTop: '10px' }}>
       <button onClick={loadUserInfo} style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.08)', color: 'var(--gray-light)', cursor: 'pointer', fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-        {loading ? '...' : showPassword ? '🙈 Hide Password' : '🔑 Show Login Info'}
+        {loading ? '...' : showPassword ? 'Hide Password' : 'Show Login Info'}
       </button>
       {showPassword && userInfo && (
         <div style={{ marginTop: '8px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '10px 12px' }}>
