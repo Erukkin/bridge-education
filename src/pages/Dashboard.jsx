@@ -758,6 +758,14 @@ export default function Dashboard({ onLogout, user }) {
 
         {/* Tingkat 2 — Actions */}
         <div style={{ display: 'flex', alignItems: 'center', padding: '8px 24px', gap: '8px', flexWrap: 'wrap' }}>
+
+           {/* Welcome message */}
+            <span style={{ fontSize: '13px', color: 'var(--gray-light)', fontFamily: 'Sora', flexShrink: 0 }}>
+              👋 Welcome, <b style={{ color: 'var(--white)' }}>{user?.username}</b>
+            </span>
+            <div style={{ width: '1px', height: '16px', background: 'rgba(255,255,255,0.15)', flexShrink: 0 }} />
+
+
           {unassignedCount > 0 && (
             <span style={{ background: 'rgba(229,62,62,0.2)', color: '#FC8181', fontSize: '12px', fontWeight: 700, padding: '5px 12px', borderRadius: '8px', border: '1px solid rgba(229,62,62,0.3)', cursor: 'pointer' }}
               onClick={() => { setViewMode('students'); setSearchBy('class'); setSearch('Unassigned') }}>
