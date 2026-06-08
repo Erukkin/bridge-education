@@ -564,6 +564,7 @@ function ClassCard({ kelas, students, deleteMode, onSelect }) {
 
 // ── MAIN DASHBOARD ──────────────────────────────────────
 export default function Dashboard({ onLogout, user }) {
+  console.log('user di dashboard:', user)
   const [students, setStudents] = useState([])
   const [classes, setClasses] = useState([])
   const [loading, setLoading] = useState(true)
