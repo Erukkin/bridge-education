@@ -50,17 +50,19 @@ const MODES = ['Offline', 'Online']
 
 // ── HELPERS ────────────────────────────────────────────
 function generateStudentId(students) {
+  const chars = 'ACDEFGHJKLMNPQRTUVWXYZ234679'
   let randomId
   do {
-    randomId = Math.random().toString(36).substring(2, 8).toUpperCase()
+    randomId = Array.from({ length: 3 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
   } while (students.some(s => s.id === `M--${randomId}`))
-  return `M--${randomId}`
+  return `BE-${randomId}`
 }
 
 function generateClassSuffix(classes, prefix) {
+  const chars = 'ACDEFGHJKLMNPQRTUVWXYZ234679'
   let suffix
   do {
-    suffix = Math.random().toString(36).substring(2, 5).toUpperCase()
+    suffix = Array.from({ length: 3 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
   } while (classes.some(c => c.name === `${prefix} #${suffix}`))
   return suffix
 }
@@ -238,7 +240,6 @@ function AdminModal({ onClose }) {
               <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', borderRadius: '10px', background: 'var(--off-white)', marginBottom: '8px' }}>
                 <div>
                   <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--navy)' }}>{admin.username}</p>
-                  <p style={{ fontSize: '11px', color: 'var(--gray)' }}>Admin</p>
                 </div>
                 <button onClick={() => handleDeleteAdmin(admin.id)} style={{ background: 'rgba(229,62,62,0.1)', border: '1px solid rgba(229,62,62,0.2)', color: '#E53E3E', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}>Delete</button>
               </div>
@@ -437,7 +438,7 @@ function Modal({ onClose, onConfirm, editData, classes }) {
                 return (
                   <div style={{ background: isNew ? 'rgba(240,180,41,0.1)' : 'rgba(46,125,50,0.08)', border: `1px solid ${isNew ? 'rgba(240,180,41,0.3)' : 'rgba(46,125,50,0.2)'}`, borderRadius: '10px', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <span style={{ fontSize: '20px' }}>{isNew ? '🆕' : '✅'}</span>
-                    <div>
+                    <div style={{textAlign: 'left'}}>
                       <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--navy)', marginBottom: '2px' }}>{classId}</p>
                       <p style={{ fontSize: '12px', color: 'var(--gray)' }}>{isNew ? 'A new class will be created' : 'Joining existing class'}</p>
                     </div>
@@ -522,12 +523,7 @@ function ClassCard({ kelas, students, deleteMode, onSelect }) {
       onMouseEnter={e => { if (deleteMode) { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 12px 32px rgba(229,62,62,0.3)' } }}
       onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none' }}
     >
-      <div className="card-deco" />
-      {deleteMode && (
-        <div style={{ position: 'absolute', top: '10px', left: '50%', transform: 'translateX(-50%)', background: 'rgba(229,62,62,0.85)', color: 'white', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '999px', fontFamily: 'Sora, sans-serif', whiteSpace: 'nowrap' }}>
-          🗑️ Click to delete
-        </div>
-      )}
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: deleteMode ? '28px' : '12px' }}>
         <span style={{ background: isFull ? 'rgba(229,62,62,0.2)' : 'rgba(46,125,50,0.2)', color: isFull ? '#FC8181' : '#81C784', fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '999px', fontFamily: 'Sora, sans-serif' }}>
           {isFull ? '🔴 Full' : '🟢 Open'}
@@ -567,6 +563,7 @@ export default function Dashboard({ onLogout, user }) {
   console.log('user di dashboard:', user)
   const [students, setStudents] = useState([])
   const [classes, setClasses] = useState([])
+  const [Tasks, setTasks] = useState([])
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState('students')
   const [actionMode, setActionMode] = useState(null)
@@ -725,13 +722,25 @@ export default function Dashboard({ onLogout, user }) {
       }}>
         {/* Tingkat 1 — Logo + View Toggle + Search */}
         <div style={{ display: 'flex', alignItems: 'center', padding: '12px 24px', gap: '11px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-            <span style={{ fontSize: '20px', color: 'var(--gray-light)', fontFamily: 'Sora', flexShrink: 0 }}>
+            
+            <img 
+              src="/LogoBridge.png" // Ganti dengan url atau import logo kamu
+              alt="Logo" 
+              style={{ 
+                height: '54px',       // Sesuaikan tinggi logo agar pas dengan bar
+                width: 'auto',        // Menjaga proporsi gambar
+                objectFit: 'contain',
+                flexShrink: 0 
+              }} 
+            />
+            
+            <span style={{ marginLeft: '4px', fontSize: '17px', color: 'var(--gray-light)', fontFamily: 'Sora', flexShrink: 0 }}>
               Welcome, <b style={{ color: 'var(--white)' }}>{user?.username}</b>
             </span>
 
           {/* View toggle */}
           <div style={{ display: 'flex', background: 'rgba(255,255,255,0.08)', borderRadius: '8px', padding: '3px', gap: '2px', flexShrink: 0 }}>
-            {[{ key: 'students', label: '👤 Students' }, { key: 'classes', label: '📚 Classes' }].map(v => (
+            {[{ key: 'students', label: '👤 Students' }, { key: 'classes', label: '📚 Classes' }, { key: 'tasks', label: '✍🏻 Task' }].map(v => (
               <button key={v.key} onClick={() => { setViewMode(v.key); setActionMode(null) }} style={{ padding: '5px 12px', borderRadius: '6px', border: 'none', background: viewMode === v.key ? 'var(--accent)' : 'transparent', color: viewMode === v.key ? 'white' : 'var(--gray-light)', cursor: 'pointer', fontSize: '12px', fontWeight: 600, fontFamily: 'Sora', transition: 'all 0.2s' }}>
                 {v.label}
               </button>
@@ -769,7 +778,17 @@ export default function Dashboard({ onLogout, user }) {
             </span>
           )}
 
-          <button className="btn-add" onClick={() => { setShowModal(true); setSelectedId(null); setActionMode(null) }}>+ Add New</button>
+          {viewMode === 'students' && (
+          <button className="btn-add" onClick={() => { setShowModal(true); setSelectedId(null); setActionMode(null) }}>
+            + Add New Student
+          </button>
+          )}
+
+          {viewMode === 'students' && (
+            <button className="btn-add" onClick={() => setShowAdminModal(true)} >
+              + Add New Admin
+            </button>
+          )}
 
           {viewMode === 'students' && (
             <button className="btn-mode" onClick={() => { setActionMode(actionMode === 'edit' ? null : 'edit'); setSelectedId(null) }}
@@ -778,21 +797,27 @@ export default function Dashboard({ onLogout, user }) {
             </button>
           )}
 
-          <button className="btn-mode" onClick={() => { setActionMode(actionMode === 'delete' ? null : 'delete'); setSelectedId(null) }}
-            style={{ border: `1.5px solid ${actionMode === 'delete' ? 'var(--danger)' : 'rgba(255,255,255,0.15)'}`, color: actionMode === 'delete' ? '#FC8181' : 'var(--gray-light)', background: actionMode === 'delete' ? 'rgba(229,62,62,0.15)' : 'transparent' }}>
-            🗑️ Delete
-          </button>
+          
+            <button className="btn-mode" onClick={() => { setActionMode(actionMode === 'delete' ? null : 'delete'); setSelectedId(null) }}
+              style={{ border: `1.5px solid ${actionMode === 'delete' ? 'var(--danger)' : 'rgba(255,255,255,0.15)'}`, color: actionMode === 'delete' ? '#FC8181' : 'var(--gray-light)', background: actionMode === 'delete' ? 'rgba(229,62,62,0.15)' : 'transparent' }}>
+              🗑️ Delete
+            </button>
 
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
-            <button onClick={() => setShowAdminModal(true)} style={{ padding: '7px 14px', borderRadius: '8px', border: '1.5px solid rgba(255,255,255,0.15)', background: 'transparent', color: 'var(--gray-light)', cursor: 'pointer', fontSize: '13px', fontFamily: 'Sora', fontWeight: 600 }}>
-              👥 Admins
+            <div style={{display: 'flex', gap: '8px' }}>
+
+          {viewMode === 'students' && (  
+            <button onClick={() => setShowChangePassword(true)} style={{padding: '7px 14px', borderRadius: '8px', border: '1.5px solid rgba(255,255,255,0.15)', background: 'transparent', color: 'var(--gray-light)', cursor: 'pointer', fontSize: '13px', fontFamily: 'Sora', fontWeight: 600 }}>
+              🔑 Change Password
             </button>
-            <button onClick={() => setShowChangePassword(true)} style={{ padding: '7px 14px', borderRadius: '8px', border: '1.5px solid rgba(255,255,255,0.15)', background: 'transparent', color: 'var(--gray-light)', cursor: 'pointer', fontSize: '13px', fontFamily: 'Sora', fontWeight: 600 }}>
-              🔑 Password
-            </button>
+          )}
+          
+          {viewMode === 'students' && ( 
             <button onClick={onLogout} style={{ padding: '7px 14px', borderRadius: '8px', border: '1.5px solid rgba(255,255,255,0.15)', background: 'transparent', color: 'var(--gray-light)', cursor: 'pointer', fontSize: '13px', fontFamily: 'Sora', fontWeight: 600 }}>
               Sign Out
             </button>
+          )}
+          
+          
           </div>
         </div>
       </div>
@@ -802,8 +827,8 @@ export default function Dashboard({ onLogout, user }) {
         {actionMode && (
           <div className="mode-banner" style={{ background: actionMode === 'delete' ? 'rgba(229,62,62,0.1)' : 'rgba(74,144,217,0.1)', border: `1px solid ${actionMode === 'delete' ? 'rgba(229,62,62,0.3)' : 'rgba(74,144,217,0.3)'}` }}>
             <p className="mode-banner-text" style={{ color: actionMode === 'delete' ? '#FC8181' : 'var(--accent-bright)' }}>
-              {actionMode === 'delete' && viewMode === 'students' && '🗑️ Click on a student card to delete'}
-              {actionMode === 'delete' && viewMode === 'classes' && '🗑️ Click on a class card to delete'}
+              {actionMode === 'delete' && viewMode === 'students' && 'Click on a student card to delete'}
+              {actionMode === 'delete' && viewMode === 'classes' && 'Click on a class card to delete'}
               {actionMode === 'edit' && '✏️ Click on a student card to edit'}
             </p>
             <button className="btn-cancel-mode" onClick={() => setActionMode(null)}>Cancel</button>
