@@ -761,8 +761,8 @@ export default function Dashboard({ onLogout, user }) {
         <div style={{ display: 'flex', alignItems: 'center', padding: '8px 24px', gap: '8px', flexWrap: 'wrap' }}>
 
            {/* Welcome message */}
-            <span style={{ fontSize: '13px', color: 'var(--gray-light)', fontFamily: 'Sora', flexShrink: 0 }}>
-              👋 Welcome, <b style={{ color: 'var(--white)' }}>{user?.username}</b>
+            <span style={{ fontSize: '16px', color: 'var(--gray-light)', fontFamily: 'Sora', flexShrink: 0 }}>
+              Welcome, <b style={{ color: 'var(--white)' }}>{user?.username}</b>
             </span>
             <div style={{ width: '1px', height: '16px', background: 'rgba(255,255,255,0.15)', flexShrink: 0 }} />
 
