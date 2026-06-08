@@ -783,7 +783,7 @@ export default function Dashboard({ onLogout, user }) {
             🗑️ Delete
           </button>
 
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
             <button onClick={() => setShowAdminModal(true)} style={{ padding: '7px 14px', borderRadius: '8px', border: '1.5px solid rgba(255,255,255,0.15)', background: 'transparent', color: 'var(--gray-light)', cursor: 'pointer', fontSize: '13px', fontFamily: 'Sora', fontWeight: 600 }}>
               👥 Admins
             </button>
