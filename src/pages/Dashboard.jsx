@@ -724,8 +724,10 @@ export default function Dashboard({ onLogout, user }) {
         backdropFilter: 'blur(12px)'
       }}>
         {/* Tingkat 1 — Logo + View Toggle + Search */}
-        <div style={{ display: 'flex', alignItems: 'center', padding: '10px 24px', gap: '12px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-          <p className="topbar-logo-title" style={{ flexShrink: 0 }}>Bridge Education Dashboard</p>
+        <div style={{ display: 'flex', alignItems: 'center', padding: '12px 24px', gap: '11px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            <span style={{ fontSize: '20px', color: 'var(--gray-light)', fontFamily: 'Sora', flexShrink: 0 }}>
+              Welcome, <b style={{ color: 'var(--white)' }}>{user?.username}</b>
+            </span>
 
           {/* View toggle */}
           <div style={{ display: 'flex', background: 'rgba(255,255,255,0.08)', borderRadius: '8px', padding: '3px', gap: '2px', flexShrink: 0 }}>
@@ -760,13 +762,6 @@ export default function Dashboard({ onLogout, user }) {
         {/* Tingkat 2 — Actions */}
         <div style={{ display: 'flex', alignItems: 'center', padding: '8px 24px', gap: '8px', flexWrap: 'wrap' }}>
 
-           {/* Welcome message */}
-            <span style={{ fontSize: '16px', color: 'var(--gray-light)', fontFamily: 'Sora', flexShrink: 0 }}>
-              Welcome, <b style={{ color: 'var(--white)' }}>{user?.username}</b>
-            </span>
-            <div style={{ width: '1px', height: '16px', background: 'rgba(255,255,255,0.15)', flexShrink: 0 }} />
-
-
           {unassignedCount > 0 && (
             <span style={{ background: 'rgba(229,62,62,0.2)', color: '#FC8181', fontSize: '12px', fontWeight: 700, padding: '5px 12px', borderRadius: '8px', border: '1px solid rgba(229,62,62,0.3)', cursor: 'pointer' }}
               onClick={() => { setViewMode('students'); setSearchBy('class'); setSearch('Unassigned') }}>
@@ -788,7 +783,7 @@ export default function Dashboard({ onLogout, user }) {
             🗑️ Delete
           </button>
 
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px' }}>
             <button onClick={() => setShowAdminModal(true)} style={{ padding: '7px 14px', borderRadius: '8px', border: '1.5px solid rgba(255,255,255,0.15)', background: 'transparent', color: 'var(--gray-light)', cursor: 'pointer', fontSize: '13px', fontFamily: 'Sora', fontWeight: 600 }}>
               👥 Admins
             </button>
