@@ -486,9 +486,9 @@ function StudentCard({ murid, mode, onSelect }) {
       <p className="card-id">{murid.id}</p>
       <div className="card-divider" />
       <div className="card-details">
-        <p className="card-detail-item"><span>⚥</span> {murid.jenis_kelamin}</p>
+        <p className="card-detail-item"><span>🪪</span> {murid.jenis_kelamin}</p>
         <p className="card-detail-item"><span>📞</span> {murid.no_telp?.replace(/(\d{4})(?=\d)/g, '$1-')}</p>
-        <p className="card-detail-item"><span>👥</span> {murid.class_type}{murid.age_group ? ` · ${murid.age_group}` : ''}</p>
+        <p className="card-detail-item"><span>🏫</span> {murid.class_type}{murid.age_group ? ` · ${murid.age_group}` : ''}</p>
         <p className="card-detail-item" style={{ color: isUnassigned ? '#FC8181' : 'var(--gray-light)' }}><span>🏷️</span> {murid.class_id}</p>
       </div>
       {isUnassigned && (
