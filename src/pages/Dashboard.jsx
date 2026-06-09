@@ -541,7 +541,7 @@ function ClassCard({ kelas, students, deleteMode, onSelect }) {
         </div>
       </div>
       <div className="card-divider" />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', height: '100px', overflowY: 'auto' }}>
         {count === 0 ? <p style={{ fontSize: '12px', color: 'var(--gray)', fontStyle: 'italic' }}>No students yet</p>
           : kelas.student_ids?.map((sid, i) => {
             const s = students.find(x => x.id === sid)
