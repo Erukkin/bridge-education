@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import '../App.css'
 import {
   getStudents, createStudent, updateStudent, deleteStudent,
@@ -6,6 +6,7 @@ import {
   createStudentUser, getStudentUser, getAdmins,
   registerAdmin, deleteUser, changeAdminPassword
 } from '../api'
+
 
 // ── CONSTANTS ──────────────────────────────────────────
 const PROGRAMS = ['GE', 'AE', 'Foundation', 'IELTS', 'U-Prep']
@@ -53,7 +54,7 @@ function generateStudentId(students) {
   const chars = 'ACDEFGHJKLMNPQRTUVWXYZ234679'
   let randomId
   do {
-    randomId = Array.from({ length: 3 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+    randomId = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
   } while (students.some(s => s.id === `M--${randomId}`))
   return `BE-${randomId}`
 }
@@ -62,7 +63,7 @@ function generateClassSuffix(classes, prefix) {
   const chars = 'ACDEFGHJKLMNPQRTUVWXYZ234679'
   let suffix
   do {
-    suffix = Array.from({ length: 3 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+    suffix = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
   } while (classes.some(c => c.name === `${prefix} #${suffix}`))
   return suffix
 }
@@ -634,8 +635,39 @@ export default function Dashboard({ onLogout, user }) {
     }
   }
 
+  const notifAudioRef = useRef(null)
+  const [toasts, setToasts] = useState([])
+
+  function playNotifSound() {
+    try {
+      const audio = new Audio('/notif.mp3')
+      audio.volume = 1
+      audio.play().catch(() => {})
+      notifAudioRef.current = audio
+    } catch (e) {}
+  }
+
+  function pushToast(message, tone = 'student') {
+    const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`
+    setToasts(prev => [...prev, { id, message, tone }])
+    playNotifSound()
+    window.setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id))
+    }, 3000)
+  }
+
+
   async function handleConfirm(form) {
+    // close immediately
+    setShowModal(false)
+    setActionMode(null)
+
     const studentId = selectedId || generateStudentId(students)
+    const isCreatingNewStudent = !selectedId
+    const preClassCheck = isCreatingNewStudent
+      ? getOrCreateClass(classes, form.program, form.classType, form.ageGroup, form.mode)
+      : null
+    const predictedClassIsNew = !!preClassCheck?.isNew
 
     if (selectedId) {
       const oldStudent = students.find(s => s.id === selectedId)
@@ -675,7 +707,7 @@ export default function Dashboard({ onLogout, user }) {
       setSelectedId(null)
 
     } else {
-      const { classId, isNew } = getOrCreateClass(classes, form.program, form.classType, form.ageGroup, form.mode)
+      const { classId, isNew } = preClassCheck
       const newStudent = { id: studentId, nama_lengkap: form.namaLengkap, jenis_kelamin: form.jenisKelamin, no_telp: form.noTelp, program: form.program, class_type: form.classType, age_group: form.ageGroup || null, mode: form.mode, class_id: classId }
       await createStudent(newStudent)
       let updatedClasses = [...classes]
@@ -692,10 +724,11 @@ export default function Dashboard({ onLogout, user }) {
       setStudents([...students, newStudent])
       setClasses(updatedClasses)
       await createStudentUser(studentId)
-    }
 
-    setShowModal(false)
-    setActionMode(null)
+      // only after successful writes
+      pushToast('New Student Added!', 'student')
+      if (predictedClassIsNew || isNew) pushToast('New Class Added!', 'class')
+    }
   }
 
   const editData = selectedId ? students.find(s => s.id === selectedId) : null
@@ -712,6 +745,47 @@ export default function Dashboard({ onLogout, user }) {
 
   return (
     <div style={{ minHeight: '100vh', width: '100%', background: 'var(--navy)', fontFamily: 'DM Sans' }}>
+
+      {/* Toasts (top-left) */}
+      <div style={{ position: 'fixed', top: 12, left: 12, zIndex: 2000, display: 'flex', flexDirection: 'column', gap: 10, pointerEvents: 'none' }}>
+        {toasts.map(t => (
+          <div
+            key={t.id}
+            style={{
+              background: 'rgba(255,255,255,0.95)',
+              border: '1px solid rgba(255,255,255,0.3)',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.25)',
+              borderRadius: 10,
+              padding: '10px 12px',
+              minWidth: 160,
+              transform: 'translateX(0)',
+              animation: 'bb-toast-in-out 3s forwards',
+              color: 'var(--navy)',
+              fontFamily: 'Sora, sans-serif',
+              fontWeight: 700,
+              fontSize: 13,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
+            <span style={{ fontSize: 16 }}>
+              {t.tone === 'class' ? '🏫' : '🎓'}
+            </span>
+            {t.message}
+          </div>
+        ))}
+      </div>
+
+      {/* keyframes */}
+      <style>{`
+        @keyframes bb-toast-in-out {
+          0% { transform: translateX(-140px); opacity: 0; }
+          10% { transform: translateX(0); opacity: 1; }
+          80% { transform: translateX(0); opacity: 1; }
+          100% { transform: translateX(-140px); opacity: 0; }
+        }
+      `}</style>
 
       {/* ── TOPBAR 2 TINGKAT ── */}
       <div style={{
@@ -763,7 +837,7 @@ export default function Dashboard({ onLogout, user }) {
             </div>
           )}
 
-          <span style={{ fontSize: '12px', color: 'var(--gray)', flexShrink: 0, marginLeft: 'auto' }}>
+          <span style={{ fontSize: '12px', color: 'var(--gray)', flexShrink: 0, }}>
             {viewMode === 'students' ? `${filtered.length}/${students.length} students` : `${classes.length} classes`}
           </span>
         </div>
