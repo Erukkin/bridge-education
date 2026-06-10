@@ -9,7 +9,7 @@ import {
 
 
 // ── CONSTANTS ──────────────────────────────────────────
-const PROGRAMS = ['GE', 'AE', 'Foundation', 'IELTS', 'U-Prep']
+const PROGRAMS = ['GE', 'AE', 'Foundation', 'ESP', 'IELTS', 'TOEFL', 'U-Prep', 'U-Assist']
 
 const CLASS_TYPES_BY_PROGRAM = {
   GE: [
@@ -31,6 +31,13 @@ const CLASS_TYPES_BY_PROGRAM = {
     { name: 'Semi Private', capacity: 4, meetings: 25, students: '3-4 students' },
     { name: 'Regular', capacity: 15, meetings: 21, students: '7-15 students' },
   ],
+  ESP: [
+    { name: 'Executive', capacity: 1, meetings: 25, students: '1 student' },
+    { name: 'Executive Half', capacity: 1, meetings: 12, students: '1 student' },
+    { name: 'Private', capacity: 2, meetings: 25, students: '2 students' },
+    { name: 'Semi Private', capacity: 4, meetings: 25, students: '3-4 students' },
+    { name: 'Regular', capacity: 15, meetings: 21, students: '7-15 students' },
+  ],
   IELTS: [
     { name: 'Executive', capacity: 1, meetings: 25, students: '1 student' },
     { name: 'Executive Half', capacity: 1, meetings: 12, students: '1 student' },
@@ -38,11 +45,20 @@ const CLASS_TYPES_BY_PROGRAM = {
     { name: 'Semi Private', capacity: 4, meetings: 25, students: '3-4 students' },
     { name: 'Regular', capacity: 15, meetings: 21, students: '7-15 students' },
   ],
+  TOEFL: [
+    { name: 'Executive', capacity: 1, meetings: 25, students: '1 student' },
+    { name: 'Executive Half', capacity: 1, meetings: 12, students: '1 student' },
+    { name: 'Private', capacity: 2, meetings: 25, students: '2 students' },
+    { name: 'Semi Private', capacity: 4, meetings: 25, students: '3-4 students' },
+    { name: 'Regular', capacity: 15, meetings: 21, students: '7-15 students' },
+  ],
   'U-Prep': [
-    { name: 'U-Prep Private', capacity: 1, meetings: 25, students: '1 student' },
+    { name: 'U-Prep', capacity: 1, meetings: 25, students: '1 student' },
     { name: 'Half U-Prep', capacity: 1, meetings: 12, students: '1 student' },
-    { name: 'U-Assistance', capacity: 1, meetings: 25, students: '1 student' },
-    { name: 'Half U-Assistance', capacity: 1, meetings: 12, students: '1 student' },
+  ],
+  'U-Assist': [
+    { name: 'U-Assist', capacity: 1, meetings: 25, students: '1 student' },
+    { name: 'Half U-Assist', capacity: 1, meetings: 12, students: '1 student' },
   ],
 }
 
@@ -75,8 +91,8 @@ function getClassInfo(program, classType) {
 function isAlwaysNewClass(classType) {
   return [
     'Executive', 'Executive Half',
-    'U-Prep Private', 'Half U-Prep',
-    'U-Assistance', 'Half U-Assistance'
+    'U-Prep', 'Half U-Prep',
+    'U-Assist', 'Half U-Assist'
   ].includes(classType)
 }
 
@@ -573,6 +589,7 @@ export default function Dashboard({ onLogout, user }) {
   const [showAdminModal, setShowAdminModal] = useState(false)
   const [showChangePassword, setShowChangePassword] = useState(false)
   const [search, setSearch] = useState('')
+  const [classSearch, setClassSearch] = useState('')
   const [searchBy, setSearchBy] = useState('name')
   const [searchFocused, setSearchFocused] = useState(false)
 
@@ -825,7 +842,7 @@ export default function Dashboard({ onLogout, user }) {
           {viewMode === 'students' && (
             <div className={`search-wrap ${searchFocused ? 'search-focused' : ''}`} style={{ flex: 1, maxWidth: '500px' }}>
               <div className="search-pills">
-                {[{ key: 'name', label: '👤 Name' }, { key: 'id', label: '🪪 ID' }, { key: 'class', label: '📚 Class' }].map(opt => (
+                {[{ key: 'name', label: 'Name' }, { key: 'id', label: 'ID' }, { key: 'class', label: 'Class' }].map(opt => (
                   <button key={opt.key} className={`search-pill ${searchBy === opt.key ? 'search-pill-active' : ''}`} onClick={() => { setSearchBy(opt.key); setSearch('') }}>
                     {opt.label}
                   </button>
@@ -834,6 +851,20 @@ export default function Dashboard({ onLogout, user }) {
               <div className="search-divider" />
               <input className="search-input" value={search} onChange={e => setSearch(e.target.value)} placeholder={searchBy === 'name' ? 'Search by name...' : searchBy === 'id' ? 'Search by ID...' : 'Search by class...'} onFocus={() => setSearchFocused(true)} onBlur={() => setSearchFocused(false)} />
               {search && <button className="search-clear" onClick={() => setSearch('')}>✕</button>}
+            </div>
+          )}
+
+          {viewMode === 'classes' && (
+            <div className={`search-wrap ${searchFocused ? 'search-focused' : ''}`} style={{ flex: 1, maxWidth: '500px' }}>
+              <input
+                className="search-input"
+                value={classSearch}
+                onChange={e => setClassSearch(e.target.value)}
+                placeholder="   Search by class name or code... "
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setSearchFocused(false)}
+              />
+              {classSearch && <button className="search-clear" onClick={() => setClassSearch('')}>✕</button>}
             </div>
           )}
 
@@ -939,9 +970,16 @@ export default function Dashboard({ onLogout, user }) {
               <p className="empty-state-sub">Classes will appear here once you add students</p>
             </div>
           ) : (
-            <div className="student-grid">
-              {classes.map((kelas, i) => <ClassCard key={i} kelas={kelas} students={students} deleteMode={actionMode === 'delete'} onSelect={handleSelect} />)}
-            </div>
+            <>
+
+
+              <div className="student-grid">
+                {classes
+                  .filter(k => !classSearch || k.name.toLowerCase().includes(classSearch.toLowerCase()))
+                  .map((kelas, i) => <ClassCard key={i} kelas={kelas} students={students} deleteMode={actionMode === 'delete'} onSelect={handleSelect} />)
+                }
+              </div>
+            </>
           )
         )}
       </div>
