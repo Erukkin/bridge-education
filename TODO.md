@@ -1,8 +1,14 @@
-# TODO
+# TODO - Fitur Move Student ke Kelas Bebas
 
-- [ ] Add toast notification component (slide-in/out) for “New Student Added!” and “New Class Added!”
-- [ ] Play notif.mp3 when notifications show
-- [ ] Update Dashboard modal flow so “Confirm Enrollment” closes immediately, but notifications appear only after successful API writes
-- [ ] Detect whether a new class was generated during student create flow, and trigger corresponding notification
-- [ ] Add minimal CSS for toast container/animation (or inline if preferred)
-- [ ] Test by adding a student that creates a new class (and one that joins an existing class)
+## Rencana
+1. Tambahkan tombol aksi **“🚚 Move”** di UI Dashboard, posisi di antara Edit dan Delete.
+2. Tambahkan state `actionMode === 'move'` dan modifikasi `handleSelect` untuk mengaktifkan flow pindah.
+3. Buat komponen modal ringan/inline di `Dashboard.jsx` untuk memilih kelas tujuan dari daftar **kelas available** (tidak full).
+4. Saat konfirmasi:
+   - Update `classes` lama (hapus studentId dari `student_ids`).
+   - Update `classes` baru (tambah studentId ke `student_ids`), sebelum join cek capacity.
+   - Update `students.class_id` ke kelas tujuan.
+   - Refresh state `students` dan `classes`.
+5. Pastikan rule: kelas full tidak bisa dipilih/join.
+6. Jalankan build/lint dan test manual.
+
