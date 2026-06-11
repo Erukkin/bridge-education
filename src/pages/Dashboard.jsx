@@ -1201,7 +1201,103 @@ export default function Dashboard({ onLogout, user }) {
             </>
           )
         )}
+
+        {viewMode === 'tasks' && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 14, width: '100%', padding: 20 }}>
+            {[
+              { title: 'GE', subPrograms: SUBPROGRAMS_BY_PROGRAM.GE },
+              { title: 'AE', subPrograms: SUBPROGRAMS_BY_PROGRAM.AE },
+              { title: 'Foundation', subPrograms: SUBPROGRAMS_BY_PROGRAM.Foundation },
+              {
+                title: 'ESP',
+                // ESP bercabang: Profession -> Level
+                subPrograms: SUBPROGRAMS_BY_PROGRAM.ESP.flatMap(prof =>
+                  ESP_LEVELS.map(l => `${prof} ${l}`)
+                ),
+              },
+              { title: 'IELTS', subPrograms: SUBPROGRAMS_BY_PROGRAM.IELTS },
+              { title: 'TOEFL', subPrograms: SUBPROGRAMS_BY_PROGRAM.TOEFL },
+              { title: 'U-Prep', subPrograms: ['U-Prep'] },
+              { title: 'U-Assist', subPrograms: ['U-Assist'] },
+            ].map((card, idx) => (
+
+              <div
+                key={idx}
+                style={{
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  borderRadius: 16,
+                  padding: 16,
+                  color: 'var(--white)',
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <span
+                    style={{
+                      background: 'rgba(74,144,217,0.16)',
+                      color: 'var(--accent-bright)',
+                      border: '1px solid rgba(74,144,217,0.25)',
+                      padding: '6px 10px',
+                      borderRadius: 999,
+                      fontWeight: 800,
+                      fontSize: 12,
+                      letterSpacing: '0.02em',
+                    }}
+                  >
+                    {card.title}
+                  </span>
+                  <span style={{ color: 'var(--gray-light)', fontSize: 12 }}>{card.subPrograms.length} items</span>
+                </div>
+
+                <div
+                  style={{
+                    display: 'grid',
+                    gap: 8,
+                    marginTop: 6,
+                    maxHeight: 220,
+                    overflowY: 'auto',
+                    paddingRight: 6,
+                  }}
+                >
+                  {card.subPrograms.map((sp, spIdx) => (
+                    <div
+                      key={spIdx}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '10px 12px',
+                        background: 'rgba(255,255,255,0.06)',
+                        border: '1px solid rgba(255,255,255,0.10)',
+                        borderRadius: 12,
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontWeight: 700,
+                          fontSize: 13,
+                          color: 'var(--white)',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          maxWidth: '70%',
+                        }}
+                        title={sp}
+                      >
+                        {sp}
+                      </span>
+                      <span style={{ fontSize: 12, color: 'var(--gray-light)' }}>Syllabus</span>
+                    </div>
+                  ))}
+                </div>
+
+              </div>
+            ))}
+          </div>
+        )}
       </div>
+
 
       {showModal && (
         <Modal onClose={() => { setShowModal(false); setSelectedId(null) }} onConfirm={handleConfirm} editData={editData} classes={classes} />
