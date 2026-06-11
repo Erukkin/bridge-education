@@ -152,8 +152,16 @@ export default function StudentPage({ onLogout, user }) {
           </p>
 
           {[
-            { label: 'Program', value: `${student.program} Programs`, icon: '📚' },
+            {
+              label: 'Program',
+              value:
+                student.program === 'ESP'
+                  ? `${student.program} - ${student.esp_profession} - ${student.esp_level}`
+                  : `${student.program} - ${student.sub_program}`,
+              icon: '📚'
+            },
             { label: 'Class Type', value: student.class_type, icon: '👥' },
+
             { label: 'Mode', value: student.mode, icon: student.mode === 'Online' ? '💻' : '🏫' },
             { label: 'Class ID', value: student.class_id, icon: '🏷️' },
             ...(student.age_group ? [{ label: 'Age Group', value: student.age_group, icon: '🎯' }] : [])

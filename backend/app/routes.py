@@ -12,6 +12,7 @@ router = APIRouter()
 def get_students(db: Session = Depends(get_db)):
     return db.query(models.Student).all()
 
+
 @router.post("/students", response_model=schemas.StudentResponse)
 def create_student(student: schemas.StudentCreate, db: Session = Depends(get_db)):
     db_student = models.Student(**student.dict())
@@ -19,6 +20,7 @@ def create_student(student: schemas.StudentCreate, db: Session = Depends(get_db)
     db.commit()
     db.refresh(db_student)
     return db_student
+
 
 @router.put("/students/{student_id}", response_model=schemas.StudentResponse)
 def update_student(student_id: str, student: schemas.StudentBase, db: Session = Depends(get_db)):
@@ -30,6 +32,7 @@ def update_student(student_id: str, student: schemas.StudentBase, db: Session = 
     db.commit()
     db.refresh(db_student)
     return db_student
+
 
 @router.delete("/students/{student_id}")
 def delete_student(student_id: str, db: Session = Depends(get_db)):
@@ -50,6 +53,9 @@ def get_classes(db: Session = Depends(get_db)):
         c_dict = {
             "name": c.name,
             "program": c.program,
+            "sub_program": getattr(c, 'sub_program', None),
+            "esp_profession": getattr(c, 'esp_profession', None),
+            "esp_level": getattr(c, 'esp_level', None),
             "class_type": c.class_type,
             "age_group": c.age_group,
             "mode": c.mode,
@@ -58,11 +64,15 @@ def get_classes(db: Session = Depends(get_db)):
         result.append(c_dict)
     return result
 
+
 @router.post("/classes", response_model=schemas.ClassResponse)
 def create_class(kelas: schemas.ClassBase, db: Session = Depends(get_db)):
     db_class = models.Class(
         name=kelas.name,
         program=kelas.program,
+        sub_program=kelas.sub_program,
+        esp_profession=kelas.esp_profession,
+        esp_level=kelas.esp_level,
         class_type=kelas.class_type,
         age_group=kelas.age_group,
         mode=kelas.mode,
@@ -73,12 +83,16 @@ def create_class(kelas: schemas.ClassBase, db: Session = Depends(get_db)):
     db.refresh(db_class)
     return {**kelas.dict()}
 
+
 @router.put("/classes/{class_name}", response_model=schemas.ClassResponse)
 def update_class(class_name: str, kelas: schemas.ClassBase, db: Session = Depends(get_db)):
     db_class = db.query(models.Class).filter(models.Class.name == class_name).first()
     if not db_class:
         raise HTTPException(status_code=404, detail="Class not found")
     db_class.program = kelas.program
+    db_class.sub_program = kelas.sub_program
+    db_class.esp_profession = kelas.esp_profession
+    db_class.esp_level = kelas.esp_level
     db_class.class_type = kelas.class_type
     db_class.age_group = kelas.age_group
     db_class.mode = kelas.mode
@@ -86,6 +100,7 @@ def update_class(class_name: str, kelas: schemas.ClassBase, db: Session = Depend
     db.commit()
     db.refresh(db_class)
     return {**kelas.dict()}
+
 
 @router.delete("/classes/{class_name}")
 def delete_class(class_name: str, db: Session = Depends(get_db)):

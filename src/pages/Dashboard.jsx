@@ -11,6 +11,19 @@ import {
 // ── CONSTANTS ──────────────────────────────────────────
 const PROGRAMS = ['GE', 'AE', 'Foundation', 'ESP', 'IELTS', 'TOEFL', 'U-Prep', 'U-Assist']
 
+// sub program / sub role mapping
+const SUBPROGRAMS_BY_PROGRAM = {
+  GE: ['Pre-A1', 'A1', 'A2', 'B1', 'B1+', 'B2', 'C1', 'C2'],
+  AE: ['B1', 'B1+', 'B2', 'C1', 'C2'],
+  Foundation: ['JHS B1', 'JHS B1+', 'JHS B2', 'JHS C1'],
+  ESP: ['Business', 'Medical', 'Hospitality'], // profession (step 3)
+  IELTS: ['Foundation', '1', '2', '3'],
+  TOEFL: ['Foundation', '1', '2', '3'],
+}
+
+const ESP_LEVELS = ['B1', 'B1+', 'B2', 'C1', 'C2']
+
+
 const CLASS_TYPES_BY_PROGRAM = {
   GE: [
     { name: 'Executive', capacity: 1, meetings: 25, students: '1 student' },
@@ -96,12 +109,19 @@ function isAlwaysNewClass(classType) {
   ].includes(classType)
 }
 
-function getOrCreateClass(classes, program, classType, ageGroup, mode) {
+function getOrCreateClass(classes, program, classType, ageGroup, mode, subProgram, espProfession, espLevel) {
   const classInfo = getClassInfo(program, classType)
   const capacity = classInfo?.capacity || 1
+
+  const espSub = espProfession && espLevel ? `${espProfession}-${espLevel}` : ''
+  const effectiveSub = program === 'ESP'
+    ? espSub
+    : subProgram || ''
+
   const prefix = program === 'GE'
-    ? `${program}-${classType}-${ageGroup}-${mode}`
-    : `${program}-${classType}-${mode}`
+    ? `${program}-${effectiveSub}-${classType}-${ageGroup}-${mode}`
+    : `${program}-${effectiveSub}-${classType}-${mode}`
+
 
   if (isAlwaysNewClass(classType)) {
     const suffix = generateClassSuffix(classes, prefix)
@@ -110,7 +130,8 @@ function getOrCreateClass(classes, program, classType, ageGroup, mode) {
 
   const existing = classes
     .filter(c => c.name.startsWith(prefix))
-    .find(c => c.student_ids.length < capacity)
+    .find(c => (c.student_ids || []).length < capacity)
+
 
   if (existing) return { isNew: false, classId: existing.name }
 
@@ -308,13 +329,19 @@ function StudentPasswordBadge({ studentId }) {
 // ── MODAL ──────────────────────────────────────────────
 function Modal({ onClose, onConfirm, editData, classes }) {
   const hasAgeGroup = (program) => program === 'GE'
-  const TOTAL_STEPS = 5
+  const TOTAL_STEPS = 6
 
   const [form, setForm] = useState({
     namaLengkap: editData?.nama_lengkap || '',
     jenisKelamin: editData?.jenis_kelamin || '',
     noTelp: editData?.no_telp || '',
     program: editData?.program || '',
+
+    // new fields
+    subProgram: editData?.sub_program || '',
+    espProfession: editData?.esp_profession || '',
+    espLevel: editData?.esp_level || '',
+
     classType: editData?.class_type || '',
     ageGroup: editData?.age_group || '',
     mode: editData?.mode || '',
@@ -324,10 +351,12 @@ function Modal({ onClose, onConfirm, editData, classes }) {
   const stepTitles = {
     1: 'Student Information',
     2: 'Select Program',
-    3: 'Select Class Type',
-    4: hasAgeGroup(form.program) ? 'Select Age Group & Mode' : 'Select Class Mode',
-    5: 'Confirm Enrollment'
+    3: 'Select Subprogram / Subrole',
+    4: 'Select Class Type',
+    5: hasAgeGroup(form.program) ? 'Select Age Group & Mode' : 'Select Class Mode',
+    6: 'Confirm Enrollment'
   }
+
 
   function handleNext() {
     if (step === 1) {
@@ -335,17 +364,38 @@ function Modal({ onClose, onConfirm, editData, classes }) {
       if (form.noTelp.length < 10) { alert('Phone number must be at least 10 digits!'); return }
     }
     if (step === 2 && !form.program) { alert('Please select a program!'); return }
-    if (step === 3 && !form.classType) { alert('Please select a class type!'); return }
-    if (step === 4) {
+
+    if (step === 3) {
+      if (form.program === 'ESP') {
+        if (!form.espProfession) { alert('Please select a profession!'); return }
+        if (!form.espLevel) { alert('Please select an ESP level!'); return }
+      } else {
+        if (!form.subProgram) { alert('Please select a subprogram!'); return }
+      }
+    }
+
+    if (step === 4 && !form.classType) { alert('Please select a class type!'); return }
+    if (step === 5) {
       if (hasAgeGroup(form.program) && !form.ageGroup) { alert('Please select an age group!'); return }
       if (!form.mode) { alert('Please select a class mode!'); return }
     }
     setStep(step + 1)
   }
 
+
   function handleProgramChange(p) {
-    setForm({ ...form, program: p, classType: '', ageGroup: '', mode: '' })
+    setForm({
+      ...form,
+      program: p,
+      subProgram: '',
+      espProfession: '',
+      espLevel: '',
+      classType: '',
+      ageGroup: '',
+      mode: ''
+    })
   }
+
 
   const progressPct = ((step - 1) / (TOTAL_STEPS - 1)) * 100
 
@@ -391,6 +441,74 @@ function Modal({ onClose, onConfirm, editData, classes }) {
           )}
           {step === 3 && (
             <div>
+              {form.program === 'ESP' ? (
+                <>
+                  <p style={{ color: 'var(--gray)', fontSize: '13px', marginBottom: '12px' }}>Choose ESP Profession</p>
+                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '18px' }}>
+                    {SUBPROGRAMS_BY_PROGRAM.ESP.map(p => (
+                      <button
+                        key={p}
+                        onClick={() => setForm({ ...form, espProfession: p, espLevel: '' })}
+                        style={{
+                          flex: '1 1 160px',
+                          padding: '12px',
+                          borderRadius: '10px',
+                          border: `2px solid ${form.espProfession === p ? 'var(--accent)' : 'var(--gray-light)'}`,
+                          background: form.espProfession === p ? 'rgba(74,144,217,0.1)' : 'var(--off-white)',
+                          cursor: 'pointer',
+                          color: form.espProfession === p ? 'var(--blue)' : 'var(--navy)',
+                          fontWeight: form.espProfession === p ? 700 : 500,
+                          fontSize: '13px',
+                          fontFamily: 'Sora, sans-serif',
+                          transition: 'all 0.15s'
+                        }}
+                      >
+                        {form.espProfession === p ? '✓ ' : ''}{p}
+                      </button>
+                    ))}
+                  </div>
+
+                  <p style={{ color: 'var(--gray)', fontSize: '13px', marginBottom: '12px' }}>Choose ESP Level</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    {ESP_LEVELS.map(l => (
+                      <button
+                        key={l}
+                        onClick={() => setForm({ ...form, espLevel: l })}
+                        style={{ padding: '16px', borderRadius: '10px', border: `2px solid ${form.espLevel === l ? 'var(--accent)' : 'var(--gray-light)'}`, background: form.espLevel === l ? 'rgba(74,144,217,0.1)' : 'var(--off-white)', cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s' }}
+                      >
+                        <p style={{ fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: '13px', color: form.espLevel === l ? 'var(--blue)' : 'var(--navy)', marginBottom: '4px' }}>{form.espLevel === l ? '✓ ' : ''}{l}</p>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p style={{ color: 'var(--gray)', fontSize: '13px', marginBottom: '16px' }}>Choose subprogram for {form.program}</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    {(SUBPROGRAMS_BY_PROGRAM[form.program] || []).map(sp => (
+                      <button
+                        key={sp}
+                        onClick={() => setForm({ ...form, subProgram: sp })}
+                        style={{
+                          padding: '16px',
+                          borderRadius: '10px',
+                          border: `2px solid ${form.subProgram === sp ? 'var(--accent)' : 'var(--gray-light)'}`,
+                          background: form.subProgram === sp ? 'rgba(74,144,217,0.1)' : 'var(--off-white)',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          transition: 'all 0.15s'
+                        }}
+                      >
+                        <p style={{ fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: '13px', color: form.subProgram === sp ? 'var(--blue)' : 'var(--navy)', marginBottom: '4px' }}>{form.subProgram === sp ? '✓ ' : ''}{sp}</p>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+          {step === 4 && (
+            <div>
               <p style={{ color: 'var(--gray)', fontSize: '13px', marginBottom: '16px' }}>Choose class type for {form.program} Programs</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 {(CLASS_TYPES_BY_PROGRAM[form.program] || []).map(c => (
@@ -403,7 +521,7 @@ function Modal({ onClose, onConfirm, editData, classes }) {
               </div>
             </div>
           )}
-          {step === 4 && (
+          {step === 5 && (
             <div>
               {hasAgeGroup(form.program) && (
                 <>
@@ -427,8 +545,9 @@ function Modal({ onClose, onConfirm, editData, classes }) {
               </div>
             </div>
           )}
-          {step === 5 && (
+          {step === 6 && (
             <div>
+
               <p style={{ color: 'var(--gray)', fontSize: '13px', marginBottom: '16px' }}>Please review the enrollment details</p>
               <div style={{ background: 'var(--off-white)', borderRadius: '10px', padding: '16px', marginBottom: '12px' }}>
                 <p style={{ fontSize: '11px', color: 'var(--gray)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' }}>Student Info</p>
@@ -438,11 +557,17 @@ function Modal({ onClose, onConfirm, editData, classes }) {
               <div style={{ background: 'rgba(74,144,217,0.08)', border: '1px solid rgba(74,144,217,0.2)', borderRadius: '10px', padding: '16px', marginBottom: '12px' }}>
                 <p style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' }}>Class Configuration</p>
                 {[
-                  { label: 'Program', value: `${form.program} Programs` },
+                  {
+                    label: 'Program',
+                    value: form.program === 'ESP'
+                      ? `${form.program} - ${form.espProfession} - ${form.espLevel}`
+                      : `${form.program} - ${form.subProgram}`
+                  },
                   { label: 'Class Type', value: form.classType },
                   ...(hasAgeGroup(form.program) ? [{ label: 'Age Group', value: form.ageGroup }] : []),
                   { label: 'Mode', value: form.mode },
                   { label: 'Meetings', value: `${getClassInfo(form.program, form.classType)?.meetings} meetings` },
+
                 ].map((item, i) => (
                   <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '6px' }}>
                     <span style={{ color: 'var(--gray)' }}>{item.label}</span>
@@ -451,7 +576,17 @@ function Modal({ onClose, onConfirm, editData, classes }) {
                 ))}
               </div>
               {(() => {
-                const { classId, isNew } = getOrCreateClass(classes, form.program, form.classType, form.ageGroup, form.mode)
+                const { classId, isNew } = getOrCreateClass(
+                  classes,
+                  form.program,
+                  form.classType,
+                  form.ageGroup,
+                  form.mode,
+                  form.subProgram,
+                  form.espProfession,
+                  form.espLevel
+                )
+
                 return (
                   <div style={{ background: isNew ? 'rgba(240,180,41,0.1)' : 'rgba(46,125,50,0.08)', border: `1px solid ${isNew ? 'rgba(240,180,41,0.3)' : 'rgba(46,125,50,0.2)'}`, borderRadius: '10px', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <span style={{ fontSize: '20px' }}>{isNew ? '🆕' : '✅'}</span>
@@ -682,8 +817,18 @@ export default function Dashboard({ onLogout, user }) {
     const studentId = selectedId || generateStudentId(students)
     const isCreatingNewStudent = !selectedId
     const preClassCheck = isCreatingNewStudent
-      ? getOrCreateClass(classes, form.program, form.classType, form.ageGroup, form.mode)
+      ? getOrCreateClass(
+          classes,
+          form.program,
+          form.classType,
+          form.ageGroup,
+          form.mode,
+          form.subProgram,
+          form.espProfession,
+          form.espLevel
+        )
       : null
+
     const predictedClassIsNew = !!preClassCheck?.isNew
 
     if (selectedId) {
@@ -703,21 +848,56 @@ export default function Dashboard({ onLogout, user }) {
             updatedClasses = updatedClasses.map(c => c.name === oldClassId ? { ...c, student_ids: updatedIds } : c)
           }
         }
-        const { classId, isNew } = getOrCreateClass(updatedClasses, form.program, form.classType, form.ageGroup, form.mode)
+        const { classId, isNew } = getOrCreateClass(
+          updatedClasses,
+          form.program,
+          form.classType,
+          form.ageGroup,
+          form.mode,
+          form.subProgram,
+          form.espProfession,
+          form.espLevel
+        )
+
         newClassId = classId
         if (isNew) {
-          const newKelas = { name: classId, program: form.program, class_type: form.classType, age_group: form.ageGroup, mode: form.mode, student_ids: [selectedId] }
+          const newKelas = {
+            name: classId,
+            program: form.program,
+            sub_program: form.program === 'ESP' ? null : (form.subProgram || null),
+            esp_profession: form.program === 'ESP' ? form.espProfession : null,
+            esp_level: form.program === 'ESP' ? form.espLevel : null,
+            class_type: form.classType,
+            age_group: form.ageGroup,
+            mode: form.mode,
+            student_ids: [selectedId]
+          }
           await createClass(newKelas)
           updatedClasses.push(newKelas)
         } else {
-          const existingKelas = updatedClasses.find(c => c.name === classId)
-          const updatedIds = [...existingKelas.student_ids, selectedId]
-          await updateClass(classId, { ...existingKelas, student_ids: updatedIds })
+
+        const existingKelas = updatedClasses.find(c => c.name === classId)
+        const updatedIds = [...(existingKelas.student_ids || []), selectedId]
+        await updateClass(classId, { ...existingKelas, student_ids: updatedIds, sub_program: existingKelas.sub_program, esp_profession: existingKelas.esp_profession, esp_level: existingKelas.esp_level })
+
           updatedClasses = updatedClasses.map(c => c.name === classId ? { ...c, student_ids: updatedIds } : c)
         }
       }
 
-      const updatedStudent = { nama_lengkap: form.namaLengkap, jenis_kelamin: form.jenisKelamin, no_telp: form.noTelp, program: form.program, class_type: form.classType, age_group: form.ageGroup, mode: form.mode, class_id: newClassId }
+      const updatedStudent = {
+        nama_lengkap: form.namaLengkap,
+        jenis_kelamin: form.jenisKelamin,
+        no_telp: form.noTelp,
+        program: form.program,
+        sub_program: form.program === 'ESP' ? null : (form.subProgram || null),
+        esp_profession: form.program === 'ESP' ? form.espProfession : null,
+        esp_level: form.program === 'ESP' ? form.espLevel : null,
+        class_type: form.classType,
+        age_group: form.ageGroup,
+        mode: form.mode,
+        class_id: newClassId
+      }
+
       await updateStudent(selectedId, updatedStudent)
       setStudents(students.map(s => s.id === selectedId ? { ...s, ...updatedStudent } : s))
       setClasses(updatedClasses)
@@ -725,18 +905,44 @@ export default function Dashboard({ onLogout, user }) {
 
     } else {
       const { classId, isNew } = preClassCheck
-      const newStudent = { id: studentId, nama_lengkap: form.namaLengkap, jenis_kelamin: form.jenisKelamin, no_telp: form.noTelp, program: form.program, class_type: form.classType, age_group: form.ageGroup || null, mode: form.mode, class_id: classId }
+      const newStudent = {
+        id: studentId,
+        nama_lengkap: form.namaLengkap,
+        jenis_kelamin: form.jenisKelamin,
+        no_telp: form.noTelp,
+        program: form.program,
+        sub_program: form.program === 'ESP' ? null : (form.subProgram || null),
+        esp_profession: form.program === 'ESP' ? form.espProfession : null,
+        esp_level: form.program === 'ESP' ? form.espLevel : null,
+        class_type: form.classType,
+        age_group: form.ageGroup || null,
+        mode: form.mode,
+        class_id: classId
+      }
+
       await createStudent(newStudent)
       let updatedClasses = [...classes]
       if (isNew) {
-        const newKelas = { name: classId, program: form.program, class_type: form.classType, age_group: form.ageGroup || null, mode: form.mode, student_ids: [studentId] }
+        const newKelas = {
+          name: classId,
+          program: form.program,
+          sub_program: form.program === 'ESP' ? null : (form.subProgram || null),
+          esp_profession: form.program === 'ESP' ? form.espProfession : null,
+          esp_level: form.program === 'ESP' ? form.espLevel : null,
+          class_type: form.classType,
+          age_group: form.ageGroup || null,
+          mode: form.mode,
+          student_ids: [studentId]
+        }
         await createClass(newKelas)
+
         updatedClasses.push(newKelas)
       } else {
         const existingKelas = updatedClasses.find(c => c.name === classId)
-        const updatedIds = [...existingKelas.student_ids, studentId]
+        const updatedIds = [...(existingKelas.student_ids || []), studentId]
         await updateClass(classId, { ...existingKelas, student_ids: updatedIds })
         updatedClasses = updatedClasses.map(c => c.name === classId ? { ...c, student_ids: updatedIds } : c)
+
       }
       setStudents([...students, newStudent])
       setClasses(updatedClasses)
@@ -902,11 +1108,12 @@ export default function Dashboard({ onLogout, user }) {
             </button>
           )}
 
-          
+          {(viewMode === 'students' || viewMode === 'classes') && (
             <button className="btn-mode" onClick={() => { setActionMode(actionMode === 'delete' ? null : 'delete'); setSelectedId(null) }}
               style={{ border: `1.5px solid ${actionMode === 'delete' ? 'var(--danger)' : 'rgba(255,255,255,0.15)'}`, color: actionMode === 'delete' ? '#FC8181' : 'var(--gray-light)', background: actionMode === 'delete' ? 'rgba(229,62,62,0.15)' : 'transparent' }}>
               🗑️ Delete
             </button>
+          )}
 
             <div style={{display: 'flex', gap: '8px' }}>
 
@@ -919,6 +1126,18 @@ export default function Dashboard({ onLogout, user }) {
           {viewMode === 'students' && ( 
             <button onClick={onLogout} style={{ padding: '7px 14px', borderRadius: '8px', border: '1.5px solid rgba(255,255,255,0.15)', background: 'transparent', color: 'var(--gray-light)', cursor: 'pointer', fontSize: '13px', fontFamily: 'Sora', fontWeight: 600 }}>
               Sign Out
+            </button>
+          )}
+
+          {viewMode === 'tasks' && (  
+            <button style={{padding: '7px 14px', borderRadius: '8px', border: '1.5px solid rgba(255,255,255,0.15)', background: 'transparent', color: 'var(--gray-light)', cursor: 'pointer', fontSize: '13px', fontFamily: 'Sora', fontWeight: 600 }}>
+              Add Syllabus
+            </button>
+          )}
+
+          {viewMode === 'tasks' && (  
+            <button style={{padding: '7px 14px', borderRadius: '8px', border: '1.5px solid rgba(255,255,255,0.15)', background: 'transparent', color: 'var(--gray-light)', cursor: 'pointer', fontSize: '13px', fontFamily: 'Sora', fontWeight: 600 }}>
+              Edit Syllabus
             </button>
           )}
           

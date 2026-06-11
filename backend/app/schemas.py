@@ -5,11 +5,21 @@ class StudentBase(BaseModel):
     nama_lengkap: str
     jenis_kelamin: str
     no_telp: str
+
     program: str
+
+    # GE/AE/Foundation/IELTS/TOEFL sub-program / level (mis: "JHS B1", "B1+", "1", etc.)
+    sub_program: Optional[str] = None
+
+    # ESP specific
+    esp_profession: Optional[str] = None
+    esp_level: Optional[str] = None
+
     class_type: str
     age_group: Optional[str] = None
     mode: str
     class_id: str
+
 
 class StudentCreate(StudentBase):
     id: str
@@ -23,10 +33,17 @@ class StudentResponse(StudentBase):
 class ClassBase(BaseModel):
     name: str
     program: str
+
+    sub_program: Optional[str] = None
+
+    esp_profession: Optional[str] = None
+    esp_level: Optional[str] = None
+
     class_type: str
     age_group: Optional[str] = None
     mode: str
     student_ids: List[str] = []
+
 
 class ClassResponse(ClassBase):
     class Config:

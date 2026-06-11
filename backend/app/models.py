@@ -8,21 +8,39 @@ class Student(Base):
     nama_lengkap = Column(String)
     jenis_kelamin = Column(String)
     no_telp = Column(String)
+
     program = Column(String)
+    # GE/AE/Foundation/IELTS/TOEFL sub-program / level (mis: "JHS B1", "B1+", "1", etc.)
+    sub_program = Column(String, nullable=True)
+
+    # ESP specific
+    esp_profession = Column(String, nullable=True)  # Business/Medical/Hospitality
+    esp_level = Column(String, nullable=True)        # B1, B1+, B2, C1, C2
+
     class_type = Column(String)
-    age_group = Column(String, nullable=True)
+    age_group = Column(String, nullable=True)  # only for GE in the current UI
     mode = Column(String)
     class_id = Column(String)
+
 
 class Class(Base):
     __tablename__ = "classes"
 
     name = Column(String, primary_key=True, index=True)
     program = Column(String)
+
+    # mirrors Student.sub_program for GE/AE/Foundation/IELTS/TOEFL
+    sub_program = Column(String, nullable=True)
+
+    # mirrors Student.esp_profession & Student.esp_level for ESP
+    esp_profession = Column(String, nullable=True)
+    esp_level = Column(String, nullable=True)
+
     class_type = Column(String)
     age_group = Column(String, nullable=True)
     mode = Column(String)
     student_ids = Column(String)
+
 
 class User(Base):
     __tablename__ = "users"
