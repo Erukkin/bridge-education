@@ -80,7 +80,7 @@ const MODES = ['Offline', 'Online']
 
 // ── HELPERS ────────────────────────────────────────────
 function generateStudentId(students) {
-  const chars = 'ACDEFGHJKLMNPQRTUVWXYZ234679'
+  const chars = 'ABCDEFGHJKLMNPQRTUVWXYZ234679'
   let randomId
   do {
     randomId = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
@@ -89,7 +89,7 @@ function generateStudentId(students) {
 }
 
 function generateClassSuffix(classes, prefix) {
-  const chars = 'ACDEFGHJKLMNPQRTUVWXYZ234679'
+  const chars = 'ABCDEFGHJKLMNPQRTUVWXYZ234679'
   let suffix
   do {
     suffix = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
