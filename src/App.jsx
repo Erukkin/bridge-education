@@ -17,7 +17,7 @@ export default function App() {
     if (saved) {
       // Jika ada catatan waktu terakhir aktif, cek apakah durasi matinya sudah lewat 2 jam
       // (2 jam * 60 menit * 60 detik * 1000 ms = 7200000 ms)
-      if (lastActive && (now - parseInt(lastActive) > 2 * 60 * 60 * 1000)) {
+      if (lastActive && (now - parseInt(lastActive) > 10 * 1000)) {
         // Jika sudah ditinggal lebih dari 2 jam, hapus data dan paksa relogin
         localStorage.removeItem('bridgeUser')
         localStorage.removeItem('bridgeLastActive')
@@ -40,7 +40,7 @@ export default function App() {
       if (timer) clearTimeout(timer);
       
       // Setel timer auto-logout 2 jam
-      timer = setTimeout(triggerLogout, 2 * 60 * 60 * 1000);
+      timer = setTimeout(triggerLogout, 10 * 1000);
 
       // Setiap kali ada aktivitas, perbarui juga catatan waktu di localStorage
       // Ini yang menjaga agar saat tab tiba-tiba ditutup, browser tahu menit terakhir kamu aktif
