@@ -8,62 +8,78 @@ export default function App() {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  // Load user dari localStorage waktu app dibuka
+  // 1. Jalankan pengecekan waktu terakhir aktif saat aplikasi pertama kali dibuka
   useEffect(() => {
     const saved = localStorage.getItem('bridgeUser')
+    const lastActive = localStorage.getItem('bridgeLastActive')
+    const now = new Date().getTime()
+
     if (saved) {
-      setUser(JSON.parse(saved))
+      // Jika ada catatan waktu terakhir aktif, cek apakah durasi matinya sudah lewat 2 jam
+      // (2 jam * 60 menit * 60 detik * 1000 ms = 7200000 ms)
+      if (lastActive && (now - parseInt(lastActive) > 2 * 60 * 60 * 1000)) {
+        // Jika sudah ditinggal lebih dari 2 jam, hapus data dan paksa relogin
+        localStorage.removeItem('bridgeUser')
+        localStorage.removeItem('bridgeLastActive')
+        setUser(null)
+      } else {
+        // Jika masih kurang dari 2 jam, ijinkan langsung masuk dashboard
+        setUser(JSON.parse(saved))
+      }
     }
     setLoading(false)
   }, [])
 
-  // === FITUR AUTO LOGOUT 2 JAM SEWAKTU NO ACTIVITY ===
+  // 2. FITUR AUTO LOGOUT SEWAKTU NO ACTIVITY (TAB TERBUKA)
   useEffect(() => {
-    // Fitur hanya berjalan kalau ada user yang sedang login
     if (!user) return;
 
     let timer;
 
     const resetTimer = () => {
       if (timer) clearTimeout(timer);
-      // Setel waktu 2 jam (2 jam * 60 menit * 60 detik * 1000 milidetik)
-      timer = setTimeout(triggerLogout, 10 * 1000);
+      
+      // Setel timer auto-logout 2 jam
+      timer = setTimeout(triggerLogout, 2 * 60 * 60 * 1000);
+
+      // Setiap kali ada aktivitas, perbarui juga catatan waktu di localStorage
+      // Ini yang menjaga agar saat tab tiba-tiba ditutup, browser tahu menit terakhir kamu aktif
+      localStorage.setItem('bridgeLastActive', new Date().getTime().toString());
     };
 
     const triggerLogout = () => {
-      alert("Session Expired");
-      handleLogout(); // Panggil fungsi logout bawaan kamu
+      alert("Sesi Anda telah berakhir karena tidak ada aktivitas selama 2 jam.");
+      handleLogout();
     };
 
-    // Daftar aktivitas browser yang dideteksi (klik, ketik, mouse gerak, scroll)
     const events = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'];
 
-    // Pasang pendengar aktivitas ke browser
     events.forEach(event => {
       window.addEventListener(event, resetTimer);
     });
 
-    // Jalankan timer pertama kali saat user terdeteksi login
+    // Jalankan tracker waktu pertama kali
     resetTimer();
 
-    // Bersihkan event listeners ketika user logout / komponen di-unmount
     return () => {
       if (timer) clearTimeout(timer);
       events.forEach(event => {
         window.removeEventListener(event, resetTimer);
       });
     };
-  }, [user]); // Akan nge-trigger ulang setiap kali status 'user' berubah
-  // ===================================================
+  }, [user]);
 
   function handleLogin(userData) {
     setUser(userData)
     localStorage.setItem('bridgeUser', JSON.stringify(userData))
+    // Catat waktu awal saat login berhasil
+    localStorage.setItem('bridgeLastActive', new Date().getTime().toString())
   }
 
   function handleLogout() {
     setUser(null)
     localStorage.removeItem('bridgeUser')
+    localStorage.removeItem('bridgeLastActive')
   }
 
   if (loading) return (
