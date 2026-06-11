@@ -715,7 +715,7 @@ export default function Dashboard({ onLogout, user }) {
   console.log('user di dashboard:', user)
   const [students, setStudents] = useState([])
   const [classes, setClasses] = useState([])
-  const [Tasks, setTasks] = useState([])
+
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState('students')
   const [actionMode, setActionMode] = useState(null)
@@ -875,13 +875,19 @@ export default function Dashboard({ onLogout, user }) {
           await createClass(newKelas)
           updatedClasses.push(newKelas)
         } else {
-
-        const existingKelas = updatedClasses.find(c => c.name === classId)
-        const updatedIds = [...(existingKelas.student_ids || []), selectedId]
-        await updateClass(classId, { ...existingKelas, student_ids: updatedIds, sub_program: existingKelas.sub_program, esp_profession: existingKelas.esp_profession, esp_level: existingKelas.esp_level })
+          const existingKelas = updatedClasses.find(c => c.name === classId)
+          const updatedIds = [...(existingKelas.student_ids || []), selectedId]
+          await updateClass(classId, {
+            ...existingKelas,
+            student_ids: updatedIds,
+            sub_program: existingKelas.sub_program,
+            esp_profession: existingKelas.esp_profession,
+            esp_level: existingKelas.esp_level
+          })
 
           updatedClasses = updatedClasses.map(c => c.name === classId ? { ...c, student_ids: updatedIds } : c)
         }
+
       }
 
       const updatedStudent = {
@@ -1224,7 +1230,7 @@ export default function Dashboard({ onLogout, user }) {
               <div
                 key={idx}
                 style={{
-                  background: 'rgba(255,255,255,0.06)',
+                  background: 'linear-gradient(145deg, var(--navy-light), var(--blue))',
                   border: '1px solid rgba(255,255,255,0.12)',
                   borderRadius: 16,
                   padding: 16,

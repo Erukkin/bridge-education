@@ -51,3 +51,23 @@ class User(Base):
     role = Column(String)  # 'admin' | 'student'
     student_id = Column(String, nullable=True)  # link ke murid kalau role student
     plain_password = Column(String, nullable=True)  # buat admin liat password murid
+
+
+class Syllabus(Base):
+    __tablename__ = "syllabus"
+
+    id = Column(String, primary_key=True, index=True)
+
+    program = Column(String)  # GE/AE/Foundation/ESP/IELTS/TOEFL/U-Prep/U-Assist
+
+    # GE/AE/Foundation/IELTS/TOEFL sub-program/level label (ex: "Pre-A1", "JHS B1", "1")
+    sub_program = Column(String, nullable=True)
+
+    # ESP specific (profession + level)
+    esp_profession = Column(String, nullable=True)  # Business/Medical/Hospitality
+    esp_level = Column(String, nullable=True)        # B1, B1+, B2, C1, C2
+
+    # UI convenience label (ex: "GE - Pre-A1" / "ESP - Business B1+")
+    label = Column(String)
+    # Optional: meetings/capacity not used for tasks UI right now, but can be added later
+

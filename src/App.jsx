@@ -12,6 +12,7 @@ export default function App() {
   useEffect(() => {
     const saved = localStorage.getItem('bridgeUser')
     if (saved) {
+      // avoid cascading renders by updating state once
       setUser(JSON.parse(saved))
     }
     setLoading(false)

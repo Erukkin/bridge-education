@@ -80,3 +80,25 @@ class UserResponse(BaseModel):
 class ChangePasswordRequest(BaseModel):
     old_password: str
     new_password: str
+
+
+# ── SYLLABUS ───────────────────────────────────────────
+
+class SyllabusBase(BaseModel):
+    program: str
+    sub_program: Optional[str] = None
+    esp_profession: Optional[str] = None
+    esp_level: Optional[str] = None
+    label: str
+
+
+class SyllabusCreate(SyllabusBase):
+    id: str
+
+
+class SyllabusResponse(SyllabusBase):
+    id: str
+
+    class Config:
+        from_attributes = True
+

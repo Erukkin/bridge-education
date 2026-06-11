@@ -110,3 +110,20 @@ def delete_class(class_name: str, db: Session = Depends(get_db)):
     db.delete(db_class)
     db.commit()
     return { "message": "Class deleted" }
+
+
+# ── SYLLABUS ───────────────────────────────────────────
+
+@router.get("/syllabus", response_model=list[schemas.SyllabusResponse])
+def get_syllabi(db: Session = Depends(get_db)):
+    return db.query(models.Syllabus).all()
+
+
+@router.post("/syllabus", response_model=schemas.SyllabusResponse)
+def create_syllabus(item: schemas.SyllabusCreate, db: Session = Depends(get_db)):
+    db_item = models.Syllabus(**item.dict())
+    db.add(db_item)
+    db.commit()
+    db.refresh(db_item)
+    return db_item
+
