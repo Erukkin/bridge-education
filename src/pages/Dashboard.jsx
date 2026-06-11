@@ -19,6 +19,8 @@ const SUBPROGRAMS_BY_PROGRAM = {
   ESP: ['Business', 'Medical', 'Hospitality'], // profession (step 3)
   IELTS: ['Foundation', '1', '2', '3'],
   TOEFL: ['Foundation', '1', '2', '3'],
+  'U-Prep': ['UP'],
+  'U-Assist': ['UA'],
 }
 
 const ESP_LEVELS = ['B1', 'B1+', 'B2', 'C1', 'C2']
