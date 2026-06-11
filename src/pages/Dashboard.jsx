@@ -4,25 +4,24 @@ import {
   getStudents, createStudent, updateStudent, deleteStudent,
   getClasses, createClass, updateClass, deleteClass,
   createStudentUser, getStudentUser, getAdmins,
-  registerAdmin, deleteUser, changeAdminPassword
+  registerAdmin, deleteUser, changeAdminPassword,
+  getSyllabi
 } from '../api'
 
 
 // ── CONSTANTS ──────────────────────────────────────────
 const PROGRAMS = ['GE', 'AE', 'Foundation', 'ESP', 'IELTS', 'TOEFL', 'U-Prep', 'U-Assist']
 
-// sub program / sub role mapping
 const SUBPROGRAMS_BY_PROGRAM = {
   GE: ['Pre-A1', 'A1', 'A2', 'B1', 'B1+', 'B2', 'C1', 'C2'],
   AE: ['B1', 'B1+', 'B2', 'C1', 'C2'],
   Foundation: ['JHS B1', 'JHS B1+', 'JHS B2', 'JHS C1'],
-  ESP: ['Business', 'Medical', 'Hospitality'], // profession (step 3)
+  ESP: ['Business', 'Medical', 'Hospitality'],
   IELTS: ['Foundation', '1', '2', '3'],
   TOEFL: ['Foundation', '1', '2', '3'],
 }
 
 const ESP_LEVELS = ['B1', 'B1+', 'B2', 'C1', 'C2']
-
 
 const CLASS_TYPES_BY_PROGRAM = {
   GE: [
@@ -114,14 +113,11 @@ function getOrCreateClass(classes, program, classType, ageGroup, mode, subProgra
   const capacity = classInfo?.capacity || 1
 
   const espSub = espProfession && espLevel ? `${espProfession}-${espLevel}` : ''
-  const effectiveSub = program === 'ESP'
-    ? espSub
-    : subProgram || ''
+  const effectiveSub = program === 'ESP' ? espSub : subProgram || ''
 
   const prefix = program === 'GE'
     ? `${program}-${effectiveSub}-${classType}-${ageGroup}-${mode}`
     : `${program}-${effectiveSub}-${classType}-${mode}`
-
 
   if (isAlwaysNewClass(classType)) {
     const suffix = generateClassSuffix(classes, prefix)
@@ -131,7 +127,6 @@ function getOrCreateClass(classes, program, classType, ageGroup, mode, subProgra
   const existing = classes
     .filter(c => c.name.startsWith(prefix))
     .find(c => (c.student_ids || []).length < capacity)
-
 
   if (existing) return { isNew: false, classId: existing.name }
 
@@ -179,7 +174,6 @@ function ChangePasswordModal({ user, onClose }) {
           <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Enter new password" />
           <label>Confirm New Password</label>
           <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="Confirm new password" />
-
           {error && (
             <div style={{ background: 'rgba(229,62,62,0.08)', border: '1px solid rgba(229,62,62,0.25)', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', color: '#E53E3E', marginBottom: '16px' }}>
               ⚠️ {error}
@@ -190,7 +184,6 @@ function ChangePasswordModal({ user, onClose }) {
               ✅ {success}
             </div>
           )}
-
           <div className="modal-footer">
             <button className="btn-cancel" onClick={onClose}>Cancel</button>
             <button className="btn-confirm" onClick={handleSave}>Save Password</button>
@@ -270,7 +263,6 @@ function AdminModal({ onClose }) {
             )}
             <button className="btn-confirm" style={{ width: '100%' }} onClick={handleAddAdmin}>Add Admin</button>
           </div>
-
           <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--blue)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>Current Admins ({admins.length})</p>
           {loading ? <p style={{ color: 'var(--gray)', fontSize: '13px' }}>Loading...</p>
             : admins.length === 0 ? <p style={{ color: 'var(--gray)', fontSize: '13px' }}>No admins yet.</p>
@@ -336,12 +328,9 @@ function Modal({ onClose, onConfirm, editData, classes }) {
     jenisKelamin: editData?.jenis_kelamin || '',
     noTelp: editData?.no_telp || '',
     program: editData?.program || '',
-
-    // new fields
     subProgram: editData?.sub_program || '',
     espProfession: editData?.esp_profession || '',
     espLevel: editData?.esp_level || '',
-
     classType: editData?.class_type || '',
     ageGroup: editData?.age_group || '',
     mode: editData?.mode || '',
@@ -357,14 +346,12 @@ function Modal({ onClose, onConfirm, editData, classes }) {
     6: 'Confirm Enrollment'
   }
 
-
   function handleNext() {
     if (step === 1) {
       if (!form.namaLengkap || !form.jenisKelamin || !form.noTelp) { alert('Please fill all fields!'); return }
       if (form.noTelp.length < 10) { alert('Phone number must be at least 10 digits!'); return }
     }
     if (step === 2 && !form.program) { alert('Please select a program!'); return }
-
     if (step === 3) {
       if (form.program === 'ESP') {
         if (!form.espProfession) { alert('Please select a profession!'); return }
@@ -373,7 +360,6 @@ function Modal({ onClose, onConfirm, editData, classes }) {
         if (!form.subProgram) { alert('Please select a subprogram!'); return }
       }
     }
-
     if (step === 4 && !form.classType) { alert('Please select a class type!'); return }
     if (step === 5) {
       if (hasAgeGroup(form.program) && !form.ageGroup) { alert('Please select an age group!'); return }
@@ -382,20 +368,9 @@ function Modal({ onClose, onConfirm, editData, classes }) {
     setStep(step + 1)
   }
 
-
   function handleProgramChange(p) {
-    setForm({
-      ...form,
-      program: p,
-      subProgram: '',
-      espProfession: '',
-      espLevel: '',
-      classType: '',
-      ageGroup: '',
-      mode: ''
-    })
+    setForm({ ...form, program: p, subProgram: '', espProfession: '', espLevel: '', classType: '', ageGroup: '', mode: '' })
   }
-
 
   const progressPct = ((step - 1) / (TOTAL_STEPS - 1)) * 100
 
@@ -446,36 +421,15 @@ function Modal({ onClose, onConfirm, editData, classes }) {
                   <p style={{ color: 'var(--gray)', fontSize: '13px', marginBottom: '12px' }}>Choose ESP Profession</p>
                   <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '18px' }}>
                     {SUBPROGRAMS_BY_PROGRAM.ESP.map(p => (
-                      <button
-                        key={p}
-                        onClick={() => setForm({ ...form, espProfession: p, espLevel: '' })}
-                        style={{
-                          flex: '1 1 160px',
-                          padding: '12px',
-                          borderRadius: '10px',
-                          border: `2px solid ${form.espProfession === p ? 'var(--accent)' : 'var(--gray-light)'}`,
-                          background: form.espProfession === p ? 'rgba(74,144,217,0.1)' : 'var(--off-white)',
-                          cursor: 'pointer',
-                          color: form.espProfession === p ? 'var(--blue)' : 'var(--navy)',
-                          fontWeight: form.espProfession === p ? 700 : 500,
-                          fontSize: '13px',
-                          fontFamily: 'Sora, sans-serif',
-                          transition: 'all 0.15s'
-                        }}
-                      >
+                      <button key={p} onClick={() => setForm({ ...form, espProfession: p, espLevel: '' })} style={{ flex: '1 1 160px', padding: '12px', borderRadius: '10px', border: `2px solid ${form.espProfession === p ? 'var(--accent)' : 'var(--gray-light)'}`, background: form.espProfession === p ? 'rgba(74,144,217,0.1)' : 'var(--off-white)', cursor: 'pointer', color: form.espProfession === p ? 'var(--blue)' : 'var(--navy)', fontWeight: form.espProfession === p ? 700 : 500, fontSize: '13px', fontFamily: 'Sora, sans-serif', transition: 'all 0.15s' }}>
                         {form.espProfession === p ? '✓ ' : ''}{p}
                       </button>
                     ))}
                   </div>
-
                   <p style={{ color: 'var(--gray)', fontSize: '13px', marginBottom: '12px' }}>Choose ESP Level</p>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                     {ESP_LEVELS.map(l => (
-                      <button
-                        key={l}
-                        onClick={() => setForm({ ...form, espLevel: l })}
-                        style={{ padding: '16px', borderRadius: '10px', border: `2px solid ${form.espLevel === l ? 'var(--accent)' : 'var(--gray-light)'}`, background: form.espLevel === l ? 'rgba(74,144,217,0.1)' : 'var(--off-white)', cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s' }}
-                      >
+                      <button key={l} onClick={() => setForm({ ...form, espLevel: l })} style={{ padding: '16px', borderRadius: '10px', border: `2px solid ${form.espLevel === l ? 'var(--accent)' : 'var(--gray-light)'}`, background: form.espLevel === l ? 'rgba(74,144,217,0.1)' : 'var(--off-white)', cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s' }}>
                         <p style={{ fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: '13px', color: form.espLevel === l ? 'var(--blue)' : 'var(--navy)', marginBottom: '4px' }}>{form.espLevel === l ? '✓ ' : ''}{l}</p>
                       </button>
                     ))}
@@ -486,19 +440,7 @@ function Modal({ onClose, onConfirm, editData, classes }) {
                   <p style={{ color: 'var(--gray)', fontSize: '13px', marginBottom: '16px' }}>Choose subprogram for {form.program}</p>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                     {(SUBPROGRAMS_BY_PROGRAM[form.program] || []).map(sp => (
-                      <button
-                        key={sp}
-                        onClick={() => setForm({ ...form, subProgram: sp })}
-                        style={{
-                          padding: '16px',
-                          borderRadius: '10px',
-                          border: `2px solid ${form.subProgram === sp ? 'var(--accent)' : 'var(--gray-light)'}`,
-                          background: form.subProgram === sp ? 'rgba(74,144,217,0.1)' : 'var(--off-white)',
-                          cursor: 'pointer',
-                          textAlign: 'left',
-                          transition: 'all 0.15s'
-                        }}
-                      >
+                      <button key={sp} onClick={() => setForm({ ...form, subProgram: sp })} style={{ padding: '16px', borderRadius: '10px', border: `2px solid ${form.subProgram === sp ? 'var(--accent)' : 'var(--gray-light)'}`, background: form.subProgram === sp ? 'rgba(74,144,217,0.1)' : 'var(--off-white)', cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s' }}>
                         <p style={{ fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: '13px', color: form.subProgram === sp ? 'var(--blue)' : 'var(--navy)', marginBottom: '4px' }}>{form.subProgram === sp ? '✓ ' : ''}{sp}</p>
                       </button>
                     ))}
@@ -547,7 +489,6 @@ function Modal({ onClose, onConfirm, editData, classes }) {
           )}
           {step === 6 && (
             <div>
-
               <p style={{ color: 'var(--gray)', fontSize: '13px', marginBottom: '16px' }}>Please review the enrollment details</p>
               <div style={{ background: 'var(--off-white)', borderRadius: '10px', padding: '16px', marginBottom: '12px' }}>
                 <p style={{ fontSize: '11px', color: 'var(--gray)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' }}>Student Info</p>
@@ -557,17 +498,11 @@ function Modal({ onClose, onConfirm, editData, classes }) {
               <div style={{ background: 'rgba(74,144,217,0.08)', border: '1px solid rgba(74,144,217,0.2)', borderRadius: '10px', padding: '16px', marginBottom: '12px' }}>
                 <p style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' }}>Class Configuration</p>
                 {[
-                  {
-                    label: 'Program',
-                    value: form.program === 'ESP'
-                      ? `${form.program} - ${form.espProfession} - ${form.espLevel}`
-                      : `${form.program} - ${form.subProgram}`
-                  },
+                  { label: 'Program', value: form.program === 'ESP' ? `${form.program} - ${form.espProfession} - ${form.espLevel}` : `${form.program} - ${form.subProgram}` },
                   { label: 'Class Type', value: form.classType },
                   ...(hasAgeGroup(form.program) ? [{ label: 'Age Group', value: form.ageGroup }] : []),
                   { label: 'Mode', value: form.mode },
                   { label: 'Meetings', value: `${getClassInfo(form.program, form.classType)?.meetings} meetings` },
-
                 ].map((item, i) => (
                   <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '6px' }}>
                     <span style={{ color: 'var(--gray)' }}>{item.label}</span>
@@ -576,21 +511,11 @@ function Modal({ onClose, onConfirm, editData, classes }) {
                 ))}
               </div>
               {(() => {
-                const { classId, isNew } = getOrCreateClass(
-                  classes,
-                  form.program,
-                  form.classType,
-                  form.ageGroup,
-                  form.mode,
-                  form.subProgram,
-                  form.espProfession,
-                  form.espLevel
-                )
-
+                const { classId, isNew } = getOrCreateClass(classes, form.program, form.classType, form.ageGroup, form.mode, form.subProgram, form.espProfession, form.espLevel)
                 return (
                   <div style={{ background: isNew ? 'rgba(240,180,41,0.1)' : 'rgba(46,125,50,0.08)', border: `1px solid ${isNew ? 'rgba(240,180,41,0.3)' : 'rgba(46,125,50,0.2)'}`, borderRadius: '10px', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <span style={{ fontSize: '20px' }}>{isNew ? '🆕' : '✅'}</span>
-                    <div style={{textAlign: 'left'}}>
+                    <div style={{ textAlign: 'left' }}>
                       <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--navy)', marginBottom: '2px' }}>{classId}</p>
                       <p style={{ fontSize: '12px', color: 'var(--gray)' }}>{isNew ? 'A new class will be created' : 'Joining existing class'}</p>
                     </div>
@@ -618,10 +543,7 @@ function StudentCard({ murid, mode, onSelect }) {
     <div
       className={`student-card ${isClickable ? 'clickable' : ''}`}
       onClick={() => isClickable && onSelect(murid)}
-      style={{
-        cursor: isClickable ? 'pointer' : 'default',
-        border: `1.5px solid ${isUnassigned ? 'rgba(229,62,62,0.5)' : mode === 'delete' ? 'rgba(229,62,62,0.4)' : mode === 'edit' ? 'rgba(90,163,245,0.4)' : 'rgba(255,255,255,0.08)'}`
-      }}
+      style={{ cursor: isClickable ? 'pointer' : 'default', border: `1.5px solid ${isUnassigned ? 'rgba(229,62,62,0.5)' : mode === 'delete' ? 'rgba(229,62,62,0.4)' : mode === 'edit' ? 'rgba(90,163,245,0.4)' : 'rgba(255,255,255,0.08)'}` }}
     >
       <div className="card-deco" />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
@@ -665,17 +587,10 @@ function ClassCard({ kelas, students, deleteMode, onSelect }) {
     <div
       className={deleteMode ? 'clickable' : ''}
       onClick={() => deleteMode && onSelect(kelas)}
-      style={{
-        background: 'linear-gradient(145deg, var(--navy-light), var(--blue))',
-        borderRadius: '14px', padding: '20px', color: 'var(--white)',
-        cursor: deleteMode ? 'pointer' : 'default',
-        border: `1.5px solid ${deleteMode ? 'rgba(229,62,62,0.5)' : isFull ? 'rgba(229,62,62,0.4)' : 'rgba(255,255,255,0.08)'}`,
-        transition: 'all 0.2s ease', position: 'relative', overflow: 'hidden'
-      }}
+      style={{ background: 'linear-gradient(145deg, var(--navy-light), var(--blue))', borderRadius: '14px', padding: '20px', color: 'var(--white)', cursor: deleteMode ? 'pointer' : 'default', border: `1.5px solid ${deleteMode ? 'rgba(229,62,62,0.5)' : isFull ? 'rgba(229,62,62,0.4)' : 'rgba(255,255,255,0.08)'}`, transition: 'all 0.2s ease', position: 'relative', overflow: 'hidden' }}
       onMouseEnter={e => { if (deleteMode) { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 12px 32px rgba(229,62,62,0.3)' } }}
       onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none' }}
     >
-
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: deleteMode ? '28px' : '12px' }}>
         <span style={{ background: isFull ? 'rgba(229,62,62,0.2)' : 'rgba(46,125,50,0.2)', color: isFull ? '#FC8181' : '#81C784', fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '999px', fontFamily: 'Sora, sans-serif' }}>
           {isFull ? '🔴 Full' : '🟢 Open'}
@@ -712,9 +627,9 @@ function ClassCard({ kelas, students, deleteMode, onSelect }) {
 
 // ── MAIN DASHBOARD ──────────────────────────────────────
 export default function Dashboard({ onLogout, user }) {
-  console.log('user di dashboard:', user)
   const [students, setStudents] = useState([])
   const [classes, setClasses] = useState([])
+  const [syllabus, setSyllabus] = useState([])  // ← BARU
 
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState('students')
@@ -732,9 +647,10 @@ export default function Dashboard({ onLogout, user }) {
     async function loadData() {
       setLoading(true)
       try {
-        const [s, c] = await Promise.all([getStudents(), getClasses()])
+        const [s, c, syl] = await Promise.all([getStudents(), getClasses(), getSyllabi()])  // ← BARU
         setStudents(s)
         setClasses(c)
+        setSyllabus(syl)  // ← BARU
       } catch (err) {
         console.error('Failed to load data:', err)
       } finally {
@@ -808,25 +724,14 @@ export default function Dashboard({ onLogout, user }) {
     }, 3000)
   }
 
-
   async function handleConfirm(form) {
-    // close immediately
     setShowModal(false)
     setActionMode(null)
 
     const studentId = selectedId || generateStudentId(students)
     const isCreatingNewStudent = !selectedId
     const preClassCheck = isCreatingNewStudent
-      ? getOrCreateClass(
-          classes,
-          form.program,
-          form.classType,
-          form.ageGroup,
-          form.mode,
-          form.subProgram,
-          form.espProfession,
-          form.espLevel
-        )
+      ? getOrCreateClass(classes, form.program, form.classType, form.ageGroup, form.mode, form.subProgram, form.espProfession, form.espLevel)
       : null
 
     const predictedClassIsNew = !!preClassCheck?.isNew
@@ -848,62 +753,21 @@ export default function Dashboard({ onLogout, user }) {
             updatedClasses = updatedClasses.map(c => c.name === oldClassId ? { ...c, student_ids: updatedIds } : c)
           }
         }
-        const { classId, isNew } = getOrCreateClass(
-          updatedClasses,
-          form.program,
-          form.classType,
-          form.ageGroup,
-          form.mode,
-          form.subProgram,
-          form.espProfession,
-          form.espLevel
-        )
-
+        const { classId, isNew } = getOrCreateClass(updatedClasses, form.program, form.classType, form.ageGroup, form.mode, form.subProgram, form.espProfession, form.espLevel)
         newClassId = classId
         if (isNew) {
-          const newKelas = {
-            name: classId,
-            program: form.program,
-            sub_program: form.program === 'ESP' ? null : (form.subProgram || null),
-            esp_profession: form.program === 'ESP' ? form.espProfession : null,
-            esp_level: form.program === 'ESP' ? form.espLevel : null,
-            class_type: form.classType,
-            age_group: form.ageGroup,
-            mode: form.mode,
-            student_ids: [selectedId]
-          }
+          const newKelas = { name: classId, program: form.program, sub_program: form.program === 'ESP' ? null : (form.subProgram || null), esp_profession: form.program === 'ESP' ? form.espProfession : null, esp_level: form.program === 'ESP' ? form.espLevel : null, class_type: form.classType, age_group: form.ageGroup, mode: form.mode, student_ids: [selectedId] }
           await createClass(newKelas)
           updatedClasses.push(newKelas)
         } else {
           const existingKelas = updatedClasses.find(c => c.name === classId)
           const updatedIds = [...(existingKelas.student_ids || []), selectedId]
-          await updateClass(classId, {
-            ...existingKelas,
-            student_ids: updatedIds,
-            sub_program: existingKelas.sub_program,
-            esp_profession: existingKelas.esp_profession,
-            esp_level: existingKelas.esp_level
-          })
-
+          await updateClass(classId, { ...existingKelas, student_ids: updatedIds, sub_program: existingKelas.sub_program, esp_profession: existingKelas.esp_profession, esp_level: existingKelas.esp_level })
           updatedClasses = updatedClasses.map(c => c.name === classId ? { ...c, student_ids: updatedIds } : c)
         }
-
       }
 
-      const updatedStudent = {
-        nama_lengkap: form.namaLengkap,
-        jenis_kelamin: form.jenisKelamin,
-        no_telp: form.noTelp,
-        program: form.program,
-        sub_program: form.program === 'ESP' ? null : (form.subProgram || null),
-        esp_profession: form.program === 'ESP' ? form.espProfession : null,
-        esp_level: form.program === 'ESP' ? form.espLevel : null,
-        class_type: form.classType,
-        age_group: form.ageGroup,
-        mode: form.mode,
-        class_id: newClassId
-      }
-
+      const updatedStudent = { nama_lengkap: form.namaLengkap, jenis_kelamin: form.jenisKelamin, no_telp: form.noTelp, program: form.program, sub_program: form.program === 'ESP' ? null : (form.subProgram || null), esp_profession: form.program === 'ESP' ? form.espProfession : null, esp_level: form.program === 'ESP' ? form.espLevel : null, class_type: form.classType, age_group: form.ageGroup, mode: form.mode, class_id: newClassId }
       await updateStudent(selectedId, updatedStudent)
       setStudents(students.map(s => s.id === selectedId ? { ...s, ...updatedStudent } : s))
       setClasses(updatedClasses)
@@ -911,50 +775,22 @@ export default function Dashboard({ onLogout, user }) {
 
     } else {
       const { classId, isNew } = preClassCheck
-      const newStudent = {
-        id: studentId,
-        nama_lengkap: form.namaLengkap,
-        jenis_kelamin: form.jenisKelamin,
-        no_telp: form.noTelp,
-        program: form.program,
-        sub_program: form.program === 'ESP' ? null : (form.subProgram || null),
-        esp_profession: form.program === 'ESP' ? form.espProfession : null,
-        esp_level: form.program === 'ESP' ? form.espLevel : null,
-        class_type: form.classType,
-        age_group: form.ageGroup || null,
-        mode: form.mode,
-        class_id: classId
-      }
-
+      const newStudent = { id: studentId, nama_lengkap: form.namaLengkap, jenis_kelamin: form.jenisKelamin, no_telp: form.noTelp, program: form.program, sub_program: form.program === 'ESP' ? null : (form.subProgram || null), esp_profession: form.program === 'ESP' ? form.espProfession : null, esp_level: form.program === 'ESP' ? form.espLevel : null, class_type: form.classType, age_group: form.ageGroup || null, mode: form.mode, class_id: classId }
       await createStudent(newStudent)
       let updatedClasses = [...classes]
       if (isNew) {
-        const newKelas = {
-          name: classId,
-          program: form.program,
-          sub_program: form.program === 'ESP' ? null : (form.subProgram || null),
-          esp_profession: form.program === 'ESP' ? form.espProfession : null,
-          esp_level: form.program === 'ESP' ? form.espLevel : null,
-          class_type: form.classType,
-          age_group: form.ageGroup || null,
-          mode: form.mode,
-          student_ids: [studentId]
-        }
+        const newKelas = { name: classId, program: form.program, sub_program: form.program === 'ESP' ? null : (form.subProgram || null), esp_profession: form.program === 'ESP' ? form.espProfession : null, esp_level: form.program === 'ESP' ? form.espLevel : null, class_type: form.classType, age_group: form.ageGroup || null, mode: form.mode, student_ids: [studentId] }
         await createClass(newKelas)
-
         updatedClasses.push(newKelas)
       } else {
         const existingKelas = updatedClasses.find(c => c.name === classId)
         const updatedIds = [...(existingKelas.student_ids || []), studentId]
         await updateClass(classId, { ...existingKelas, student_ids: updatedIds })
         updatedClasses = updatedClasses.map(c => c.name === classId ? { ...c, student_ids: updatedIds } : c)
-
       }
       setStudents([...students, newStudent])
       setClasses(updatedClasses)
       await createStudentUser(studentId)
-
-      // only after successful writes
       pushToast('New Student Added!', 'student')
       if (predictedClassIsNew || isNew) pushToast('New Class Added!', 'class')
     }
@@ -975,38 +811,16 @@ export default function Dashboard({ onLogout, user }) {
   return (
     <div style={{ minHeight: '100vh', width: '100%', background: 'var(--navy)', fontFamily: 'DM Sans' }}>
 
-      {/* Toasts (top-left) */}
+      {/* Toasts */}
       <div style={{ position: 'fixed', top: 12, left: 12, zIndex: 2000, display: 'flex', flexDirection: 'column', gap: 10, pointerEvents: 'none' }}>
         {toasts.map(t => (
-          <div
-            key={t.id}
-            style={{
-              background: 'rgba(255,255,255,0.95)',
-              border: '1px solid rgba(255,255,255,0.3)',
-              boxShadow: '0 10px 30px rgba(0,0,0,0.25)',
-              borderRadius: 10,
-              padding: '10px 12px',
-              minWidth: 160,
-              transform: 'translateX(0)',
-              animation: 'bb-toast-in-out 3s forwards',
-              color: 'var(--navy)',
-              fontFamily: 'Sora, sans-serif',
-              fontWeight: 700,
-              fontSize: 13,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-            }}
-          >
-            <span style={{ fontSize: 16 }}>
-              {t.tone === 'class' ? '🏫' : '🎓'}
-            </span>
+          <div key={t.id} style={{ background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(255,255,255,0.3)', boxShadow: '0 10px 30px rgba(0,0,0,0.25)', borderRadius: 10, padding: '10px 12px', minWidth: 160, animation: 'bb-toast-in-out 3s forwards', color: 'var(--navy)', fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 16 }}>{t.tone === 'class' ? '🏫' : '🎓'}</span>
             {t.message}
           </div>
         ))}
       </div>
 
-      {/* keyframes */}
       <style>{`
         @keyframes bb-toast-in-out {
           0% { transform: translateX(-140px); opacity: 0; }
@@ -1016,32 +830,13 @@ export default function Dashboard({ onLogout, user }) {
         }
       `}</style>
 
-      {/* ── TOPBAR 2 TINGKAT ── */}
-      <div style={{
-        background: 'linear-gradient(90deg, var(--navy), var(--navy-light))',
-        borderBottom: '1px solid rgba(255,255,255,0.07)',
-        position: 'sticky', top: 0, zIndex: 100,
-        backdropFilter: 'blur(12px)'
-      }}>
-        {/* Tingkat 1 — Logo + View Toggle + Search */}
+      {/* TOPBAR */}
+      <div style={{ background: 'linear-gradient(90deg, var(--navy), var(--navy-light))', borderBottom: '1px solid rgba(255,255,255,0.07)', position: 'sticky', top: 0, zIndex: 100, backdropFilter: 'blur(12px)' }}>
         <div style={{ display: 'flex', alignItems: 'center', padding: '12px 24px', gap: '11px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-            
-            <img 
-              src="/LogoBridge.png" // Ganti dengan url atau import logo kamu
-              alt="Logo" 
-              style={{ 
-                height: '54px',       // Sesuaikan tinggi logo agar pas dengan bar
-                width: 'auto',        // Menjaga proporsi gambar
-                objectFit: 'contain',
-                flexShrink: 0 
-              }} 
-            />
-            
-            <span style={{ marginLeft: '4px', fontSize: '17px', color: 'var(--gray-light)', fontFamily: 'Sora', flexShrink: 0 }}>
-              Welcome, <b style={{ color: 'var(--white)' }}>{user?.username}</b>
-            </span>
-
-          {/* View toggle */}
+          <img src="/LogoBridge.png" alt="Logo" style={{ height: '54px', width: 'auto', objectFit: 'contain', flexShrink: 0 }} />
+          <span style={{ marginLeft: '4px', fontSize: '17px', color: 'var(--gray-light)', fontFamily: 'Sora', flexShrink: 0 }}>
+            Welcome, <b style={{ color: 'var(--white)' }}>{user?.username}</b>
+          </span>
           <div style={{ display: 'flex', background: 'rgba(255,255,255,0.08)', borderRadius: '8px', padding: '3px', gap: '2px', flexShrink: 0 }}>
             {[{ key: 'students', label: '👤 Students' }, { key: 'classes', label: '📚 Classes' }, { key: 'tasks', label: '✍🏻 Task' }].map(v => (
               <button key={v.key} onClick={() => { setViewMode(v.key); setActionMode(null) }} style={{ padding: '5px 12px', borderRadius: '6px', border: 'none', background: viewMode === v.key ? 'var(--accent)' : 'transparent', color: viewMode === v.key ? 'white' : 'var(--gray-light)', cursor: 'pointer', fontSize: '12px', fontWeight: 600, fontFamily: 'Sora', transition: 'all 0.2s' }}>
@@ -1049,15 +844,11 @@ export default function Dashboard({ onLogout, user }) {
               </button>
             ))}
           </div>
-
-          {/* Search */}
           {viewMode === 'students' && (
             <div className={`search-wrap ${searchFocused ? 'search-focused' : ''}`} style={{ flex: 1, maxWidth: '500px' }}>
               <div className="search-pills">
                 {[{ key: 'name', label: 'Name' }, { key: 'id', label: 'ID' }, { key: 'class', label: 'Class' }].map(opt => (
-                  <button key={opt.key} className={`search-pill ${searchBy === opt.key ? 'search-pill-active' : ''}`} onClick={() => { setSearchBy(opt.key); setSearch('') }}>
-                    {opt.label}
-                  </button>
+                  <button key={opt.key} className={`search-pill ${searchBy === opt.key ? 'search-pill-active' : ''}`} onClick={() => { setSearchBy(opt.key); setSearch('') }}>{opt.label}</button>
                 ))}
               </div>
               <div className="search-divider" />
@@ -1065,89 +856,43 @@ export default function Dashboard({ onLogout, user }) {
               {search && <button className="search-clear" onClick={() => setSearch('')}>✕</button>}
             </div>
           )}
-
           {viewMode === 'classes' && (
             <div className={`search-wrap ${searchFocused ? 'search-focused' : ''}`} style={{ flex: 1, maxWidth: '500px' }}>
-              <input
-                className="search-input"
-                value={classSearch}
-                onChange={e => setClassSearch(e.target.value)}
-                placeholder="   Search by class name or code... "
-                onFocus={() => setSearchFocused(true)}
-                onBlur={() => setSearchFocused(false)}
-              />
+              <input className="search-input" value={classSearch} onChange={e => setClassSearch(e.target.value)} placeholder="   Search by class name or code... " onFocus={() => setSearchFocused(true)} onBlur={() => setSearchFocused(false)} />
               {classSearch && <button className="search-clear" onClick={() => setClassSearch('')}>✕</button>}
             </div>
           )}
-
-          <span style={{ fontSize: '12px', color: 'var(--gray)', flexShrink: 0, }}>
+          <span style={{ fontSize: '12px', color: 'var(--gray)', flexShrink: 0 }}>
             {viewMode === 'students' ? `${filtered.length}/${students.length} students` : `${classes.length} classes`}
           </span>
         </div>
 
-        {/* Tingkat 2 — Actions */}
         <div style={{ display: 'flex', alignItems: 'center', padding: '8px 24px', gap: '8px', flexWrap: 'wrap' }}>
-
           {unassignedCount > 0 && (
             <span style={{ background: 'rgba(229,62,62,0.2)', color: '#FC8181', fontSize: '12px', fontWeight: 700, padding: '5px 12px', borderRadius: '8px', border: '1px solid rgba(229,62,62,0.3)', cursor: 'pointer' }}
               onClick={() => { setViewMode('students'); setSearchBy('class'); setSearch('Unassigned') }}>
               ⚠️ {unassignedCount} Unassigned
             </span>
           )}
-
-          {viewMode === 'students' && (
-          <button className="btn-add" onClick={() => { setShowModal(true); setSelectedId(null); setActionMode(null) }}>
-            + Add New Student
-          </button>
-          )}
-
-          {viewMode === 'students' && (
-            <button className="btn-add" onClick={() => setShowAdminModal(true)} >
-              + Add New Admin
-            </button>
-          )}
-
+          {viewMode === 'students' && <button className="btn-add" onClick={() => { setShowModal(true); setSelectedId(null); setActionMode(null) }}>+ Add New Student</button>}
+          {viewMode === 'students' && <button className="btn-add" onClick={() => setShowAdminModal(true)}>+ Add New Admin</button>}
           {viewMode === 'students' && (
             <button className="btn-mode" onClick={() => { setActionMode(actionMode === 'edit' ? null : 'edit'); setSelectedId(null) }}
               style={{ border: `1.5px solid ${actionMode === 'edit' ? 'var(--gold)' : 'rgba(255,255,255,0.15)'}`, color: actionMode === 'edit' ? 'var(--gold)' : 'var(--gray-light)', background: actionMode === 'edit' ? 'rgba(240,180,41,0.15)' : 'transparent' }}>
               ✏️ Edit
             </button>
           )}
-
           {(viewMode === 'students' || viewMode === 'classes') && (
             <button className="btn-mode" onClick={() => { setActionMode(actionMode === 'delete' ? null : 'delete'); setSelectedId(null) }}
               style={{ border: `1.5px solid ${actionMode === 'delete' ? 'var(--danger)' : 'rgba(255,255,255,0.15)'}`, color: actionMode === 'delete' ? '#FC8181' : 'var(--gray-light)', background: actionMode === 'delete' ? 'rgba(229,62,62,0.15)' : 'transparent' }}>
               🗑️ Delete
             </button>
           )}
-
-            <div style={{display: 'flex', gap: '8px' }}>
-
-          {viewMode === 'students' && (  
-            <button onClick={() => setShowChangePassword(true)} style={{padding: '7px 14px', borderRadius: '8px', border: '1.5px solid rgba(255,255,255,0.15)', background: 'transparent', color: 'var(--gray-light)', cursor: 'pointer', fontSize: '13px', fontFamily: 'Sora', fontWeight: 600 }}>
-              🔑 Change Password
-            </button>
-          )}
-          
-          {viewMode === 'students' && ( 
-            <button onClick={onLogout} style={{ padding: '7px 14px', borderRadius: '8px', border: '1.5px solid rgba(255,255,255,0.15)', background: 'transparent', color: 'var(--gray-light)', cursor: 'pointer', fontSize: '13px', fontFamily: 'Sora', fontWeight: 600 }}>
-              Sign Out
-            </button>
-          )}
-
-          {viewMode === 'tasks' && (  
-            <button style={{padding: '7px 14px', borderRadius: '8px', border: '1.5px solid rgba(255,255,255,0.15)', background: 'transparent', color: 'var(--gray-light)', cursor: 'pointer', fontSize: '13px', fontFamily: 'Sora', fontWeight: 600 }}>
-              Add Syllabus
-            </button>
-          )}
-
-          {viewMode === 'tasks' && (  
-            <button style={{padding: '7px 14px', borderRadius: '8px', border: '1.5px solid rgba(255,255,255,0.15)', background: 'transparent', color: 'var(--gray-light)', cursor: 'pointer', fontSize: '13px', fontFamily: 'Sora', fontWeight: 600 }}>
-              Edit Syllabus
-            </button>
-          )}
-          
-          
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {viewMode === 'students' && <button onClick={() => setShowChangePassword(true)} style={{ padding: '7px 14px', borderRadius: '8px', border: '1.5px solid rgba(255,255,255,0.15)', background: 'transparent', color: 'var(--gray-light)', cursor: 'pointer', fontSize: '13px', fontFamily: 'Sora', fontWeight: 600 }}>🔑 Change Password</button>}
+            {viewMode === 'students' && <button onClick={onLogout} style={{ padding: '7px 14px', borderRadius: '8px', border: '1.5px solid rgba(255,255,255,0.15)', background: 'transparent', color: 'var(--gray-light)', cursor: 'pointer', fontSize: '13px', fontFamily: 'Sora', fontWeight: 600 }}>Sign Out</button>}
+            {viewMode === 'tasks' && <button style={{ padding: '7px 14px', borderRadius: '8px', border: '1.5px solid rgba(255,255,255,0.15)', background: 'transparent', color: 'var(--gray-light)', cursor: 'pointer', fontSize: '13px', fontFamily: 'Sora', fontWeight: 600 }}>Add Syllabus</button>}
+            {viewMode === 'tasks' && <button style={{ padding: '7px 14px', borderRadius: '8px', border: '1.5px solid rgba(255,255,255,0.15)', background: 'transparent', color: 'var(--gray-light)', cursor: 'pointer', fontSize: '13px', fontFamily: 'Sora', fontWeight: 600 }}>Edit Syllabus</button>}
           </div>
         </div>
       </div>
@@ -1195,125 +940,60 @@ export default function Dashboard({ onLogout, user }) {
               <p className="empty-state-sub">Classes will appear here once you add students</p>
             </div>
           ) : (
-            <>
-
-
-              <div className="student-grid">
-                {classes
-                  .filter(k => !classSearch || k.name.toLowerCase().includes(classSearch.toLowerCase()))
-                  .map((kelas, i) => <ClassCard key={i} kelas={kelas} students={students} deleteMode={actionMode === 'delete'} onSelect={handleSelect} />)
-                }
-              </div>
-            </>
+            <div className="student-grid">
+              {classes
+                .filter(k => !classSearch || k.name.toLowerCase().includes(classSearch.toLowerCase()))
+                .map((kelas, i) => <ClassCard key={i} kelas={kelas} students={students} deleteMode={actionMode === 'delete'} onSelect={handleSelect} />)
+              }
+            </div>
           )
         )}
 
+        {/* ── TASKS VIEW — data dari Supabase ── */}
         {viewMode === 'tasks' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 14, width: '100%', padding: 20 }}>
-            {[
-              { title: 'GE', subPrograms: SUBPROGRAMS_BY_PROGRAM.GE },
-              { title: 'AE', subPrograms: SUBPROGRAMS_BY_PROGRAM.AE },
-              { title: 'Foundation', subPrograms: SUBPROGRAMS_BY_PROGRAM.Foundation },
-              {
-                title: 'ESP',
-                // ESP bercabang: Profession -> Level
-                subPrograms: SUBPROGRAMS_BY_PROGRAM.ESP.flatMap(prof =>
-                  ESP_LEVELS.map(l => `${prof} ${l}`)
-                ),
-              },
-              { title: 'IELTS', subPrograms: SUBPROGRAMS_BY_PROGRAM.IELTS },
-              { title: 'TOEFL', subPrograms: SUBPROGRAMS_BY_PROGRAM.TOEFL },
-              { title: 'U-Prep', subPrograms: ['U-Prep'] },
-              { title: 'U-Assist', subPrograms: ['U-Assist'] },
-            ].map((card, idx) => (
-
-              <div
-                key={idx}
-                style={{
-                  background: 'linear-gradient(145deg, var(--navy-light), var(--blue))',
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  borderRadius: 16,
-                  padding: 16,
-                  color: 'var(--white)',
-                  boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                  <span
-                    style={{
-                      background: 'rgba(74,144,217,0.16)',
-                      color: 'var(--accent-bright)',
-                      border: '1px solid rgba(74,144,217,0.25)',
-                      padding: '6px 10px',
-                      borderRadius: 999,
-                      fontWeight: 800,
-                      fontSize: 12,
-                      letterSpacing: '0.02em',
-                    }}
-                  >
-                    {card.title}
-                  </span>
-                  <span style={{ color: 'var(--gray-light)', fontSize: 12 }}>{card.subPrograms.length} items</span>
+          syllabus.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-state-icon">✍🏻</div>
+              <p className="empty-state-title">No Syllabus Yet</p>
+              <p className="empty-state-sub">Syllabus data will appear here</p>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 14, width: '100%', padding: 20 }}>
+              {Object.entries(
+                syllabus.reduce((acc, item) => {
+                  const key = item.program
+                  if (!acc[key]) acc[key] = []
+                  acc[key].push(item)
+                  return acc
+                }, {})
+              ).map(([program, items], idx) => (
+                <div key={idx} style={{ background: 'linear-gradient(145deg, var(--navy-light), var(--blue))', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 16, padding: 16, color: 'var(--white)', boxShadow: '0 10px 30px rgba(0,0,0,0.15)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <span style={{ background: 'rgba(74,144,217,0.16)', color: 'var(--accent-bright)', border: '1px solid rgba(74,144,217,0.25)', padding: '6px 10px', borderRadius: 999, fontWeight: 800, fontSize: 12, letterSpacing: '0.02em' }}>
+                      {program}
+                    </span>
+                    <span style={{ color: 'var(--gray-light)', fontSize: 12 }}>{items.length} items</span>
+                  </div>
+                  <div style={{ display: 'grid', gap: 8, marginTop: 6, maxHeight: 220, overflowY: 'auto', paddingRight: 6 }}>
+                    {items.map((item, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 12 }}>
+                        <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--white)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '70%' }} title={item.label}>
+                          {item.label}
+                        </span>
+                        <span style={{ fontSize: 12, color: 'var(--gray-light)' }}>Syllabus</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-
-                <div
-                  style={{
-                    display: 'grid',
-                    gap: 8,
-                    marginTop: 6,
-                    maxHeight: 220,
-                    overflowY: 'auto',
-                    paddingRight: 6,
-                  }}
-                >
-                  {card.subPrograms.map((sp, spIdx) => (
-                    <div
-                      key={spIdx}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '10px 12px',
-                        background: 'rgba(255,255,255,0.06)',
-                        border: '1px solid rgba(255,255,255,0.10)',
-                        borderRadius: 12,
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontWeight: 700,
-                          fontSize: 13,
-                          color: 'var(--white)',
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          maxWidth: '70%',
-                        }}
-                        title={sp}
-                      >
-                        {sp}
-                      </span>
-                      <span style={{ fontSize: 12, color: 'var(--gray-light)' }}>Syllabus</span>
-                    </div>
-                  ))}
-                </div>
-
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )
         )}
       </div>
 
-
-      {showModal && (
-        <Modal onClose={() => { setShowModal(false); setSelectedId(null) }} onConfirm={handleConfirm} editData={editData} classes={classes} />
-      )}
-      {showAdminModal && (
-        <AdminModal onClose={() => setShowAdminModal(false)} />
-      )}
-      {showChangePassword && (
-        <ChangePasswordModal user={user} onClose={() => setShowChangePassword(false)} />
-      )}
+      {showModal && <Modal onClose={() => { setShowModal(false); setSelectedId(null) }} onConfirm={handleConfirm} editData={editData} classes={classes} />}
+      {showAdminModal && <AdminModal onClose={() => setShowAdminModal(false)} />}
+      {showChangePassword && <ChangePasswordModal user={user} onClose={() => setShowChangePassword(false)} />}
     </div>
   )
 }
