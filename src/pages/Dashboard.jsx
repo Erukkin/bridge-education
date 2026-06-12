@@ -16,12 +16,13 @@ const SUBPROGRAMS_BY_PROGRAM = {
   GE: ['Pre-A1', 'A1', 'A2', 'B1', 'B1+', 'B2', 'C1', 'C2'],
   AE: ['B1', 'B1+', 'B2', 'C1', 'C2'],
   Foundation: ['JHS B1', 'JHS B1+', 'JHS B2', 'JHS C1'],
-  ESP: ['Business', 'Medical', 'Hospitality'], // profession (step 3)
+  ESP: ['Business', 'Medical', 'Hospitality'], 
   IELTS: ['Foundation', '1', '2', '3'],
   TOEFL: ['Foundation', '1', '2', '3'],
   'U-Prep': ['UP'],
   'U-Assist': ['UA'],
 }
+const GE_AgeGroup = ['Young', 'Teens', 'Adult']
 
 const ESP_LEVELS = ['B1', 'B1+', 'B2', 'C1', 'C2']
 
@@ -731,6 +732,8 @@ export default function Dashboard({ onLogout, user }) {
   const [searchFocused, setSearchFocused] = useState(false)
 
   useEffect(() => {
+    let es
+
     async function loadData() {
       setLoading(true)
       try {
@@ -743,8 +746,38 @@ export default function Dashboard({ onLogout, user }) {
         setLoading(false)
       }
     }
+
     loadData()
+
+    // realtime via SSE
+    try {
+      const sseUrl = `${import.meta.env.VITE_API_BASE || 'https://bridge-education-production.up.railway.app'}/api/data/stream`
+      es = new EventSource(sseUrl)
+
+      es.addEventListener('data_changed', async () => {
+
+        // refresh both lists
+        try {
+          const [s, c] = await Promise.all([getStudents(), getClasses()])
+          setStudents(s)
+          setClasses(c)
+        } catch (err) {
+          console.error('SSE refresh failed:', err)
+        }
+      })
+
+      es.onerror = () => {
+        // EventSource will auto-reconnect; keep quiet to avoid spam
+      }
+    } catch (e) {
+      console.error('Failed to init SSE:', e)
+    }
+
+    return () => {
+      if (es) es.close()
+    }
   }, [])
+
 
   const filtered = students.filter(m => {
     const q = search.toLowerCase()
@@ -1213,12 +1246,17 @@ export default function Dashboard({ onLogout, user }) {
         {viewMode === 'tasks' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 14, width: '100%', padding: 20 }}>
             {[
-              { title: 'GE', subPrograms: SUBPROGRAMS_BY_PROGRAM.GE },
+              { title: 'GE', 
+                
+                subPrograms: SUBPROGRAMS_BY_PROGRAM.GE.flatMap(prof =>
+                  GE_AgeGroup.map(l => `${prof} ${l}`) 
+                ),
+              },
               { title: 'AE', subPrograms: SUBPROGRAMS_BY_PROGRAM.AE },
               { title: 'Foundation', subPrograms: SUBPROGRAMS_BY_PROGRAM.Foundation },
               {
                 title: 'ESP',
-                // ESP bercabang: Profession -> Level
+
                 subPrograms: SUBPROGRAMS_BY_PROGRAM.ESP.flatMap(prof =>
                   ESP_LEVELS.map(l => `${prof} ${l}`)
                 ),

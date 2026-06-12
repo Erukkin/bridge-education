@@ -3,8 +3,41 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models, schemas
 import json
+import asyncio
 
 router = APIRouter()
+
+# ── REALTIME (SSE) ──────────────────────────────────────
+# In-memory broadcaster (cocok untuk dev/single instance)
+_clients: set[asyncio.Queue] = set()
+
+
+def _broadcast(payload: dict):
+    # Push ke semua queue SSE client
+    for q in list(_clients):
+        try:
+            q.put_nowait(payload)
+        except Exception:
+            pass
+
+
+@router.get("/data/stream")
+async def data_stream():
+    queue: asyncio.Queue = asyncio.Queue()
+    _clients.add(queue)
+
+    try:
+        # Kirim event awal supaya UI bisa sync cepat
+        yield "event: ready\n"
+        yield "data: {}\n\n"
+
+        while True:
+            msg = await queue.get()
+            yield f"event: data_changed\n"
+            yield f"data: {json.dumps(msg)}\n\n"
+    finally:
+        _clients.discard(queue)
+
 
 # ── STUDENTS ──────────────────────────────────────────
 
@@ -13,13 +46,16 @@ def get_students(db: Session = Depends(get_db)):
     return db.query(models.Student).all()
 
 
+
 @router.post("/students", response_model=schemas.StudentResponse)
 def create_student(student: schemas.StudentCreate, db: Session = Depends(get_db)):
     db_student = models.Student(**student.dict())
     db.add(db_student)
     db.commit()
     db.refresh(db_student)
+    _broadcast({"type": "student_changed", "id": db_student.id})
     return db_student
+
 
 
 @router.put("/students/{student_id}", response_model=schemas.StudentResponse)
@@ -31,7 +67,9 @@ def update_student(student_id: str, student: schemas.StudentBase, db: Session = 
         setattr(db_student, key, value)
     db.commit()
     db.refresh(db_student)
+    _broadcast({"type": "student_changed", "id": db_student.id})
     return db_student
+
 
 
 @router.delete("/students/{student_id}")
@@ -41,7 +79,9 @@ def delete_student(student_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Student not found")
     db.delete(db_student)
     db.commit()
+    _broadcast({"type": "student_changed", "id": student_id, "deleted": True})
     return { "message": "Student deleted" }
+
 
 # ── CLASSES ───────────────────────────────────────────
 
@@ -81,7 +121,9 @@ def create_class(kelas: schemas.ClassBase, db: Session = Depends(get_db)):
     db.add(db_class)
     db.commit()
     db.refresh(db_class)
+    _broadcast({"type": "class_changed", "name": db_class.name})
     return {**kelas.dict()}
+
 
 
 @router.put("/classes/{class_name}", response_model=schemas.ClassResponse)
@@ -99,7 +141,9 @@ def update_class(class_name: str, kelas: schemas.ClassBase, db: Session = Depend
     db_class.student_ids = json.dumps(kelas.student_ids)
     db.commit()
     db.refresh(db_class)
+    _broadcast({"type": "class_changed", "name": db_class.name})
     return {**kelas.dict()}
+
 
 
 @router.delete("/classes/{class_name}")

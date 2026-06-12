@@ -1,9 +1,16 @@
-- [ ] Update DB models (backend/app/models.py): add new columns for student: sub_program/subrole and ESP profession+level; add corresponding class columns.
-- [ ] Update backend schemas (backend/app/schemas.py) to include new fields.
-- [ ] Update backend routes (backend/app/routes.py) for create/update Student and Class to persist new fields.
-- [ ] Frontend: update Dashboard.jsx Modal wizard steps with subprogram selection and new form fields.
-- [ ] Frontend: update class_id generation (getOrCreateClass) to incorporate subprogram for stable grouping.
-- [ ] Frontend: update Student card & confirmation text display to show `Foundation - JHS B1` etc.
-- [ ] Frontend: ensure Student update/create payloads include new fields.
-- [ ] Run backend start / frontend build to verify compile and API compatibility.
+# TODO - Realtime CRUD (SSE)
+
+- [x] Backend: implement SSE broadcaster + endpoint `GET /api/data/stream`
+
+- [x] Backend: broadcast event after CRUD on `students` and `classes` (POST/PUT/DELETE)
+
+- [x] Frontend: add EventSource listener di `src/pages/Dashboard.jsx` untuk refetch `getStudents()` dan `getClasses()` saat event masuk
+
+
+
+
+
+- [ ] Frontend: add EventSource listener di `src/pages/StudentPage.jsx` untuk update profile (fetch students, cari student by id)
+- [ ] Sanity check: ensure CORS supports EventSource (SSE uses normal GET)
+- [ ] Test manual: buka 2 device/browser, CRUD di salah satu harus muncul di yang lain tanpa refresh
 

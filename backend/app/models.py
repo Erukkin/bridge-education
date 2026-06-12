@@ -67,6 +67,9 @@ class Syllabus(Base):
     esp_profession = Column(String, nullable=True)  # Business/Medical/Hospitality
     esp_level = Column(String, nullable=True)        # B1, B1+, B2, C1, C2
 
+    # Kolom baru untuk kelompok umur khusus GE
+    ge_age_group = Column(String, nullable=True)
+
     # UI convenience label (ex: "GE - Pre-A1" / "ESP - Business B1+")
     label = Column(String)
     # Optional: meetings/capacity not used for tasks UI right now, but can be added later
